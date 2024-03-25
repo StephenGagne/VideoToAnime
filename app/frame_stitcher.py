@@ -1,0 +1,1 @@
+# Logic for frame stitching goes here
