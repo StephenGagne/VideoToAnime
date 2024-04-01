@@ -3,15 +3,29 @@
 
 import cv2
 import os
+import sys
+
+if len(sys.argv) == 1 :
+    print("No video name passed... exitting.")
+    exit()
+elif len(sys.argv) > 2 :
+    print("Too many arguments... exitting.")
+    exit()
+    
+videoName = sys.argv[1]
+
+if not videoName.endswith((".mp4")):
+    print("Incorrect video format... exitting")
+    exit()
 
 # Playing video from file:
 # you can modify the "PutVideoName.mp4" to the video u wanna split
-cap = cv2.VideoCapture('input/./PutVideoName.mp4')
+cap = cv2.VideoCapture('..\\input\\' + videoName)
 
 try:
     # Create target Directory if not exist
-    if not os.path.exists('originalFrames'):
-        os.makedirs('originalFrames')
+    if not os.path.exists('..\\originalFrames'):
+        os.makedirs('..\\originalFrames')
 except OSError:
     print('Error: Creating directory of originalFrames')
 
@@ -26,7 +40,7 @@ while(True):
         break
 
     # Saves image of the current frame in jpg file
-    name = './originalFrames/frame' + str(currentFrame) + '.jpg'
+    name = '..\\originalFrames\\frame' + str(currentFrame) + '.jpg'
     print('Creating...' + name)
     
     # Write the frame to disk if it's not empty
