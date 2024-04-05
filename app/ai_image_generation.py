@@ -29,8 +29,8 @@ frames = []
 for frame in os.listdir(frameDir):
     if os.path.isfile(os.path.join(frameDir, frame)) and frame.endswith((".jpg")):
         # generate the image
-        images = generate_images(context, prompt=enteredPrompt, num_outputs=outputs, negative_prompt=enteredNegativePrompt, seed=42, width=550, height=550, sampler_name='plms', 
-                         init_image=frameDir+frame, preserve_init_image_color_profile=True)
+        images = generate_images(context, prompt=enteredPrompt, num_outputs=outputs, negative_prompt=enteredNegativePrompt, width=550, height=550, sampler_name='dpmpp_sde', 
+                         init_image=frameDir+frame, preserve_init_image_color_profile=True, prompt_strength=0.38)
 
         # save the image
 

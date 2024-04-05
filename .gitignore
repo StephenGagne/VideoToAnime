@@ -1,1 +1,4 @@
+tempdir
+originalFrames/*.jpg
+generatedFrames/*.jpg
 {\rtf1}
