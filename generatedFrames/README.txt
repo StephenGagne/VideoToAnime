@@ -1,1 +1,1 @@
-# ai-generated frames go here
+Used to store AI generated images
