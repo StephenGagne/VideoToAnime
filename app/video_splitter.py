@@ -13,8 +13,8 @@ def split(video_name):
     cap = cv2.VideoCapture(video_name)
     try:
         # Create target Directory if not exist
-        if not os.path.exists(os.getcwd() + '\\originalFrames'):
-            os.makedirs(os.getcwd() + '\\originalFrames')
+        if not os.path.exists('..\\originalFrames'):
+            os.makedirs('..\\originalFrames')
     except OSError:
         print('Error: Creating directory of originalFrames')
 
@@ -29,7 +29,7 @@ def split(video_name):
             break
 
         # Saves image of the current frame in jpg file
-        name = os.getcwd() + '\\originalFrames\\frame' + str(currentFrame) + '.jpg'
+        name = '..\\originalFrames\\frame' + str(currentFrame) + '.jpg'
         #print('Creating...' + name)
         
         # Write the frame to disk if it's not empty
@@ -42,5 +42,5 @@ def split(video_name):
 
     # When everything is done, release the capture
     cap.release()
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
     return
