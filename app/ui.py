@@ -12,18 +12,17 @@ Current known issues:
 '''
 '''
 Future Plans:
-- Delink Upload from Playback, Upload's sole role will be to navigate to a file, validate it, and store it for use
-  in other signals
-- Implement Start functionality (frame splitting, AI-integration, frame stitching)
+- Further Implement Start functionality (AI-integration, frame stitching)
 - Implement threading for frame splitting to align with a progress bar
 - Refactor to allow for external QSS stylesheets?
 '''
 
 import sys
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
+from PyQt5.QtGui import QPixmap
 import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
@@ -32,10 +31,9 @@ import video_splitter_2
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
-        self.setGeometry(200, 200, 400, 280)  #set size and position of window
+        self.setGeometry(200, 200, 400, 380)  #set size and position of window
         self.setWindowTitle("Project - Group 8")
         self.setStyleSheet("background-color: #add8e6;") #background color: light blue
-        self.threadpool = QThreadPool()
         self.__file = None
         self.__frame_total = 0
         self.initUI()
@@ -44,7 +42,7 @@ class MyWindow(QMainWindow):
         current_qt = version('PyQt5')
         current_cv = cv.__version__
         current_versions = 'Current PyQt Version: ' + current_qt + '\nCurrent OpenCV Version: ' + current_cv
-        self.dependency_versions = QtWidgets.QLabel(current_versions, self)
+        self.dependency_versions = QLabel(current_versions, self)
         self.dependency_versions.setGeometry(5, 0, 400, 40)
         
         #upload button
@@ -58,11 +56,11 @@ class MyWindow(QMainWindow):
         self.startButton = QtWidgets.QPushButton(self)
         self.startButton.setGeometry(205, 100, 175, 50)
         self.startButton.setText("Start")
-        #self.startButton.move(210, 20)
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setStyleSheet("background-color: darken(foreground, 20);")
         self.startButton.setEnabled(False)
         
+        #play button
         self.playButton = QtWidgets.QPushButton(self)
         self.playButton.setGeometry(20, 100, 175, 50)
         self.playButton.setText("Play Video")
@@ -70,19 +68,37 @@ class MyWindow(QMainWindow):
         self.playButton.setStyleSheet("background-color: darken(foreground, 20);")
         self.playButton.setEnabled(False)
         
+        #prompt boxes
+        self.positive_prompt_text = QLabel(self)
+        self.positive_prompt_text.setGeometry(20, 155, 105, 50)
+        self.positive_prompt_text.setText("Positive Prompts: ")
+        self.positive_prompt = QTextEdit(self)
+        self.positive_prompt.setGeometry(135, 155, 245, 50)
+        self.negative_prompt_text = QLabel(self)
+        self.negative_prompt_text.setGeometry(20, 210, 105, 50)
+        self.negative_prompt_text.setText("Negative Prompts: ")
+        self.negative_prompt = QTextEdit(self)
+        self.negative_prompt.setGeometry(135, 210, 245, 50)
+        
+        #playback progress -= maybe unneeded?
         self.progress_bar = QtWidgets.QProgressBar(self)
-        self.progress_bar.setGeometry(20, 155, 360, 50)
+        self.progress_bar.setGeometry(20, 265, 360, 50)
         self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.progress_bar.setFormat("Playback - %p%")
         self.progress_bar.setVisible(False)
-        
-        self.split_prog_bar = QtWidgets.QProgressBar(self)
-        self.split_prog_bar.setGeometry(20, 210, 360, 50)
-        self.split_prog_bar.setAlignment(QtCore.Qt.AlignCenter)
-        self.split_prog_bar.setFormat("Splitting Frames - %p%")
-        self.split_prog_bar.setVisible(False)
 
-    def uploadClicked(self):   
+        #split progress widgets
+        self.split_prog_icon = QLabel(self)
+        self.split_prog_icon.setGeometry(120, 340, 20, 20)
+        self.split_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\loading.png").scaled(20,20))
+        self.split_prog_icon.setVisible(False)
+        self.split_prog_text = QLabel(self)
+        self.split_prog_text.setGeometry(160, 340, 200, 20)
+        self.split_prog_text.setText("Splitting frames...")
+        self.split_prog_text.setVisible(False)
+
+
+    def uploadClicked(self): 
         options = QFileDialog.Options()
         file_types = "Video Files (*.mp4 *.avi *.mov);;All Files (*)"
         file_name, _ = QFileDialog.getOpenFileName(self,"Select Video File", "", file_types, options=options)
@@ -96,24 +112,34 @@ class MyWindow(QMainWindow):
         self.startButton.setEnabled(True)
         self.playButton.setStyleSheet("background-color: #f5f5f5; color: black;")
         self.startButton.setStyleSheet("background-color: #f5f5f5; color: black;")
-        
+      
     def startClicked(self):
         if self.__file is not None:
-            worker = Worker(self.splitFrames)
-            self.threadpool.start(worker)
+            self.start_thread = QThread(self)
+            self.start_worker = Worker(self.splitFrames)
+            self.start_worker.moveToThread(self.start_thread)
+            self.start_thread.started.connect(self.start_worker.run)
+            self.start_thread.start()
             
-        self.split_prog_bar.setVisible(True)
-        folder = os.getcwd() + '\\originalFrames'
-        # TODO Logic for tracking files being created for feeding into progbar value
-          
     def splitFrames(self):
+        self.split_prog_icon.setVisible(True)
+        self.split_prog_text.setVisible(True)
         video_splitter_2.split(self.__file)
+        self.splitFinished()
+    
+    def splitFinished(self):
+        self.split_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\check.png").scaled(20,20))
+        self.split_prog_text.setText("Finished Splitting Frames!")
+        self.split_prog_text.setStyleSheet("color: green")
     
     def playClicked(self):
         print("Play button clicked!")
         if self.__file is not None:
-            worker = Worker(self.playVideo)
-            self.threadpool.start(worker)
+            self.play_thread = QThread(self)
+            self.play_worker = Worker(self.playVideo)
+            self.play_worker.moveToThread(self.play_thread)
+            self.play_thread.started.connect(self.play_worker.run)
+            self.play_thread.start()
             
     def playVideo(self):
         file_name = self.__file
@@ -162,14 +188,13 @@ class MyWindow(QMainWindow):
             cap.release()
             cv.destroyAllWindows()
     
-class Worker(QRunnable):
+class Worker(QObject):
     def __init__(self, function, *args, **kwargs):
-        super(Worker, self).__init__()
+        super().__init__()
         self.function = function
         self.args = args
         self.kwargs = kwargs
     
-    @pyqtSlot()
     def run(self):
         self.function(*self.args, **self.kwargs)
         
