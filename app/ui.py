@@ -26,7 +26,7 @@ from PyQt5.QtGui import QPixmap
 import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
-import video_splitter_2
+import video_splitter
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -124,7 +124,7 @@ class MyWindow(QMainWindow):
     def splitFrames(self):
         self.split_prog_icon.setVisible(True)
         self.split_prog_text.setVisible(True)
-        video_splitter_2.split(self.__file)
+        video_splitter.split(self.__file)
         self.splitFinished()
     
     def splitFinished(self):
