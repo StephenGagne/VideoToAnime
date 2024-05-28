@@ -19,7 +19,7 @@ Future Plans:
 
 import sys
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap
@@ -39,23 +39,17 @@ class MyWindow(QMainWindow):
         self.__frame_total = 0
         self.initUI()
 
-    def initUI(self):
-        current_qt = version('PyQt5')
-        current_cv = cv.__version__
-        current_versions = 'Current PyQt Version: ' + current_qt + '\nCurrent OpenCV Version: ' + current_cv
-        self.dependency_versions = QLabel(current_versions, self)
-        self.dependency_versions.setGeometry(5, 0, 400, 40)
-        
+    def initUI(self):        
         #upload button
         self.uploadButton = QtWidgets.QPushButton(self)
-        self.uploadButton.setGeometry(20, 45, 360, 50)
+        self.uploadButton.setGeometry(20, 10, 360, 50)
         self.uploadButton.setText("Upload")
         self.uploadButton.clicked.connect(self.uploadClicked)
         self.uploadButton.setStyleSheet("background-color: #f5f5f5; color:black;")
 
         #start button
         self.startButton = QtWidgets.QPushButton(self)
-        self.startButton.setGeometry(205, 100, 175, 50)
+        self.startButton.setGeometry(205, 65, 175, 50)
         self.startButton.setText("Start")
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setStyleSheet("background-color: darken(foreground, 20);")
@@ -63,7 +57,7 @@ class MyWindow(QMainWindow):
         
         #play button
         self.playButton = QtWidgets.QPushButton(self)
-        self.playButton.setGeometry(20, 100, 175, 50)
+        self.playButton.setGeometry(20, 65, 175, 50)
         self.playButton.setText("Play Video")
         self.playButton.clicked.connect(self.playClicked)
         self.playButton.setStyleSheet("background-color: darken(foreground, 20);")
@@ -71,43 +65,75 @@ class MyWindow(QMainWindow):
         
         #prompt boxes
         self.positive_prompt_text = QLabel(self)
-        self.positive_prompt_text.setGeometry(20, 155, 105, 50)
+        self.positive_prompt_text.setGeometry(20, 120, 105, 50)
         self.positive_prompt_text.setText("Positive Prompts: ")
         self.positive_prompt = QTextEdit(self)
-        self.positive_prompt.setGeometry(135, 155, 245, 50)
+        self.positive_prompt.setGeometry(135, 120, 245, 50)
         self.negative_prompt_text = QLabel(self)
-        self.negative_prompt_text.setGeometry(20, 210, 105, 50)
+        self.negative_prompt_text.setGeometry(20, 175, 105, 50)
         self.negative_prompt_text.setText("Negative Prompts: ")
         self.negative_prompt = QTextEdit(self)
-        self.negative_prompt.setGeometry(135, 210, 245, 50)
+        self.negative_prompt.setGeometry(135, 175, 245, 50)
         
         #playback progress -= maybe unneeded?
         self.progress_bar = QtWidgets.QProgressBar(self)
-        self.progress_bar.setGeometry(20, 265, 360, 50)
+        self.progress_bar.setGeometry(20, 230, 360, 50)
         self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.progress_bar.setFormat("Playback - %p%")
         self.progress_bar.setVisible(False)
 
         #split progress widgets
         self.split_prog_icon = QLabel(self)
-        self.split_prog_icon.setGeometry(120, 340, 20, 20)
+        self.split_prog_icon.setGeometry(120, 305, 20, 20)
         self.split_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\loading.png").scaled(20,20))
         self.split_prog_icon.setVisible(False)
         self.split_prog_text = QLabel(self)
-        self.split_prog_text.setGeometry(160, 340, 200, 20)
+        self.split_prog_text.setGeometry(160, 305, 200, 20)
         self.split_prog_text.setText("Splitting frames...")
         self.split_prog_text.setVisible(False)
         
         #imggen progress widgets
         self.gen_prog_icon = QLabel(self)
-        self.gen_prog_icon.setGeometry(120, 385, 20, 20)
+        self.gen_prog_icon.setGeometry(120, 350, 20, 20)
         self.gen_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\loading.png").scaled(20,20))
         self.gen_prog_icon.setVisible(False)
         self.gen_prog_text = QLabel(self)
-        self.gen_prog_text.setGeometry(160, 385, 200, 20)
+        self.gen_prog_text.setGeometry(160, 350, 200, 20)
         self.gen_prog_text.setText("Generating frames...")
         self.gen_prog_text.setVisible(False)
+        
+        #properties
+        self.properties = QtWidgets.QPushButton(self)
+        self.properties.setGeometry(20, 420, 360, 25)
+        self.properties.setText("Project Properties")
+        self.properties.clicked.connect(self.showProperties)
+        self.properties.setStyleSheet("background-color: #f5f5f5; color:black;")
+        
 
+    def showProperties(self):
+        current_qt = version('PyQt5')
+        current_cv = cv.__version__
+        current_py = str(sys.version_info[0]) + "." + str(sys.version_info[1]) + "." + str(sys.version_info[2])
+        if self.__file == None:
+            current_project = "No project uploaded yet."
+        else:
+            current_project = self.__file
+        if self.positive_prompt.toPlainText() == "":
+            current_prompt_p = 'max fleischer style, a photo of a cat in a field' # testing video
+        else:
+            current_prompt_p = self.positive_prompt.toPlainText()
+        if self.negative_prompt.toPlainText() == "":
+            current_prompt_n = "No negative prompts selected."
+        else:
+            current_prompt_n = self.negative_prompt.toPlainText()  
+        properties_text = "Current Project: \n\t" + current_project + "\nCurrent Positive Prompts: \n\t" + current_prompt_p + "\nCurrent Negative Prompts: \n\t" + current_prompt_n
+        versions_text = "Current Python Version: " + current_py + "\nCurrent PyQt Version: " + current_qt + "\nCurrent OpenCV Version: " + current_cv
+        props = QMessageBox()
+        props.setWindowTitle("Project Properties")
+        props.setIcon(QMessageBox.Information)
+        props.setText(properties_text)
+        props.setDetailedText(versions_text)
+        props.exec_()
 
     def uploadClicked(self): 
         options = QFileDialog.Options()
@@ -149,14 +175,14 @@ class MyWindow(QMainWindow):
     def generateFrames(self):
         self.gen_prog_icon.setVisible(True)
         self.gen_prog_text.setVisible(True)
-        if self.positive_prompt.toPlainText == "":
+        if self.positive_prompt.toPlainText() == "":
             prompt_p = 'max fleischer style, a photo of a cat in a field' # testing video
         else:
-            prompt_p = self.positive_prompt.toPlainText
-        if self.negative_prompt.toPlainText == "":
+            prompt_p = self.positive_prompt.toPlainText()
+        if self.negative_prompt.toPlainText() == "":
             prompt_n = ""
         else:
-            prompt_n = self.negative_prompt.toPlainText
+            prompt_n = self.negative_prompt.toPlainText()
         img_gen.ai_generate(prompt_p, prompt_n)
         self.genFinished()
     
