@@ -43,5 +43,6 @@ def ai_generate(enteredPrompt, enteredNegativePrompt):
             for i in range(0, outputs):
                 saveName = targetDir + frame
                 images[i].save(saveName) # images is a list of PIL.Image
+                print("Generated " + saveName)
 
     log.info("Generated images!")

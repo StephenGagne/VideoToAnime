@@ -27,11 +27,12 @@ import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
 import video_splitter
+import ai_image_generation as img_gen
 
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
-        self.setGeometry(200, 200, 400, 380)  #set size and position of window
+        self.setGeometry(200, 200, 400, 450)  #set size and position of window
         self.setWindowTitle("Project - Group 8")
         self.setStyleSheet("background-color: #add8e6;") #background color: light blue
         self.__file = None
@@ -96,6 +97,16 @@ class MyWindow(QMainWindow):
         self.split_prog_text.setGeometry(160, 340, 200, 20)
         self.split_prog_text.setText("Splitting frames...")
         self.split_prog_text.setVisible(False)
+        
+        #imggen progress widgets
+        self.gen_prog_icon = QLabel(self)
+        self.gen_prog_icon.setGeometry(120, 385, 20, 20)
+        self.gen_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\loading.png").scaled(20,20))
+        self.gen_prog_icon.setVisible(False)
+        self.gen_prog_text = QLabel(self)
+        self.gen_prog_text.setGeometry(160, 385, 200, 20)
+        self.gen_prog_text.setText("Generating frames...")
+        self.gen_prog_text.setVisible(False)
 
 
     def uploadClicked(self): 
@@ -120,17 +131,40 @@ class MyWindow(QMainWindow):
             self.start_worker.moveToThread(self.start_thread)
             self.start_thread.started.connect(self.start_worker.run)
             self.start_thread.start()
-            
+                
     def splitFrames(self):
         self.split_prog_icon.setVisible(True)
         self.split_prog_text.setVisible(True)
         video_splitter.split(self.__file)
         self.splitFinished()
+        self.generateFrames()
+        self.genFinished()
     
     def splitFinished(self):
+        self.start_worker.finished.connect(self.start_thread.quit)
         self.split_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\check.png").scaled(20,20))
         self.split_prog_text.setText("Finished Splitting Frames!")
         self.split_prog_text.setStyleSheet("color: green")
+    
+    def generateFrames(self):
+        self.gen_prog_icon.setVisible(True)
+        self.gen_prog_text.setVisible(True)
+        if self.positive_prompt.toPlainText == "":
+            prompt_p = 'max fleischer style, a photo of a cat in a field' # testing video
+        else:
+            prompt_p = self.positive_prompt.toPlainText
+        if self.negative_prompt.toPlainText == "":
+            prompt_n = ""
+        else:
+            prompt_n = self.negative_prompt.toPlainText
+        img_gen.ai_generate(prompt_p, prompt_n)
+        self.genFinished()
+    
+    def genFinished(self):
+        self.gen_worker.finished.connect(self.gen_thread.quit)
+        self.gen_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\check.png").scaled(20,20))
+        self.gen_prog_text.setText("Finished Generating Frames!")
+        self.gen_prog_text.setStyleSheet("color: green")
     
     def playClicked(self):
         print("Play button clicked!")
@@ -140,6 +174,7 @@ class MyWindow(QMainWindow):
             self.play_worker.moveToThread(self.play_thread)
             self.play_thread.started.connect(self.play_worker.run)
             self.play_thread.start()
+            self.play_worker.finished.connect(self.play_thread.quit)
             
     def playVideo(self):
         file_name = self.__file
@@ -189,6 +224,7 @@ class MyWindow(QMainWindow):
             cv.destroyAllWindows()
     
 class Worker(QObject):
+    finished = pyqtSignal()
     def __init__(self, function, *args, **kwargs):
         super().__init__()
         self.function = function
@@ -197,6 +233,7 @@ class Worker(QObject):
     
     def run(self):
         self.function(*self.args, **self.kwargs)
+        self.finished.emit()
         
 def window():
         app = QApplication(sys.argv)
