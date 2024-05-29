@@ -1,7 +1,7 @@
 import cv2
 import os
 
-def frame_stitch(videoName):
+def stitch_frames(videoName):
     # Path to the directory containing frames
     frame_directory = "..\\generatedFrames\\"
     # Output video file name
