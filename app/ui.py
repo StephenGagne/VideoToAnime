@@ -88,7 +88,7 @@ class MyWindow(QMainWindow):
         #split progress widgets
         self.split_prog_icon = QLabel(self)
         self.split_prog_icon.setGeometry(120, 305, 20, 20)
-        self.split_prog_icon.setPixmap(QPixmap("..\\assets\\loading.png").scaled(20,20))
+        self.split_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
         self.split_prog_icon.setVisible(False)
         self.split_prog_text = QLabel(self)
         self.split_prog_text.setGeometry(160, 305, 200, 20)
@@ -98,7 +98,7 @@ class MyWindow(QMainWindow):
         #imggen progress widgets
         self.gen_prog_icon = QLabel(self)
         self.gen_prog_icon.setGeometry(120, 350, 20, 20)
-        self.gen_prog_icon.setPixmap(QPixmap("..\\assets\\loading.png").scaled(20,20))
+        self.gen_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
         self.gen_prog_icon.setVisible(False)
         self.gen_prog_text = QLabel(self)
         self.gen_prog_text.setGeometry(160, 350, 200, 20)
@@ -123,7 +123,7 @@ class MyWindow(QMainWindow):
         else:
             current_project = self.__file
         if self.positive_prompt.toPlainText() == "":
-            current_prompt_p = 'max fleischer style, a photo of a cat in a field' # testing video
+            current_prompt_p = 'No positive prompts selected.'
         else:
             current_prompt_p = self.positive_prompt.toPlainText()
         if self.negative_prompt.toPlainText() == "":
@@ -179,7 +179,7 @@ class MyWindow(QMainWindow):
     
     def splitFinished(self):
         self.start_worker.finished.connect(self.start_thread.quit)
-        self.split_prog_icon.setPixmap(QPixmap("..\\assets\\check.png").scaled(20,20))
+        self.split_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.split_prog_text.setText("Finished Splitting Frames!")
         self.split_prog_text.setStyleSheet("color: green")
     
@@ -199,7 +199,7 @@ class MyWindow(QMainWindow):
     
     def genFinished(self):
         self.gen_worker.finished.connect(self.gen_thread.quit)
-        self.gen_prog_icon.setPixmap(QPixmap("..\\assets\\check.png").scaled(20,20))
+        self.gen_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.gen_prog_text.setText("Finished Generating Frames!")
         self.gen_prog_text.setStyleSheet("color: green")
     
