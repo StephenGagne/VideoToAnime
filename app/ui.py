@@ -46,6 +46,7 @@ class MyWindow(QMainWindow):
         self.uploadButton.setText("Upload")
         self.uploadButton.clicked.connect(self.uploadClicked)
         self.uploadButton.setStyleSheet("background-color: #f5f5f5; color:black;")
+        self.uploadButton.setToolTip("Upload a video to be processed")
 
         #start button
         self.startButton = QtWidgets.QPushButton(self)
@@ -54,6 +55,7 @@ class MyWindow(QMainWindow):
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setStyleSheet("background-color: darken(foreground, 20);")
         self.startButton.setEnabled(False)
+        self.startButton.setToolTip("Initiate the conversion process")
         
         #play button
         self.playButton = QtWidgets.QPushButton(self)
@@ -62,6 +64,7 @@ class MyWindow(QMainWindow):
         self.playButton.clicked.connect(self.playClicked)
         self.playButton.setStyleSheet("background-color: darken(foreground, 20);")
         self.playButton.setEnabled(False)
+        self.playButton.setToolTip("Play the currently uploaded video")
         
         #prompt boxes
         self.positive_prompt_text = QLabel(self)
@@ -85,7 +88,7 @@ class MyWindow(QMainWindow):
         #split progress widgets
         self.split_prog_icon = QLabel(self)
         self.split_prog_icon.setGeometry(120, 305, 20, 20)
-        self.split_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\loading.png").scaled(20,20))
+        self.split_prog_icon.setPixmap(QPixmap("..\\assets\\loading.png").scaled(20,20))
         self.split_prog_icon.setVisible(False)
         self.split_prog_text = QLabel(self)
         self.split_prog_text.setGeometry(160, 305, 200, 20)
@@ -95,7 +98,7 @@ class MyWindow(QMainWindow):
         #imggen progress widgets
         self.gen_prog_icon = QLabel(self)
         self.gen_prog_icon.setGeometry(120, 350, 20, 20)
-        self.gen_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\loading.png").scaled(20,20))
+        self.gen_prog_icon.setPixmap(QPixmap("..\\assets\\loading.png").scaled(20,20))
         self.gen_prog_icon.setVisible(False)
         self.gen_prog_text = QLabel(self)
         self.gen_prog_text.setGeometry(160, 350, 200, 20)
@@ -108,6 +111,7 @@ class MyWindow(QMainWindow):
         self.properties.setText("Project Properties")
         self.properties.clicked.connect(self.showProperties)
         self.properties.setStyleSheet("background-color: #f5f5f5; color:black;")
+        self.properties.setToolTip("Show project properties, including the current video and system properties")
         
 
     def showProperties(self):
@@ -151,6 +155,13 @@ class MyWindow(QMainWindow):
         self.startButton.setStyleSheet("background-color: #f5f5f5; color: black;")
       
     def startClicked(self):
+        if self.positive_prompt.toPlainText() == "":
+            errdlg = QMessageBox()
+            errdlg.setWindowTitle("Error - No Positive Prompts!")
+            errdlg.setIcon(QMessageBox.Critical)
+            errdlg.setText("Please add positive prompts before trying again!")
+            errdlg.exec_()
+            return
         if self.__file is not None:
             self.start_thread = QThread(self)
             self.start_worker = Worker(self.splitFrames)
@@ -168,7 +179,7 @@ class MyWindow(QMainWindow):
     
     def splitFinished(self):
         self.start_worker.finished.connect(self.start_thread.quit)
-        self.split_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\check.png").scaled(20,20))
+        self.split_prog_icon.setPixmap(QPixmap("..\\assets\\check.png").scaled(20,20))
         self.split_prog_text.setText("Finished Splitting Frames!")
         self.split_prog_text.setStyleSheet("color: green")
     
@@ -176,7 +187,7 @@ class MyWindow(QMainWindow):
         self.gen_prog_icon.setVisible(True)
         self.gen_prog_text.setVisible(True)
         if self.positive_prompt.toPlainText() == "":
-            prompt_p = 'max fleischer style, a photo of a cat in a field' # testing video
+            prompt_p = ""
         else:
             prompt_p = self.positive_prompt.toPlainText()
         if self.negative_prompt.toPlainText() == "":
@@ -188,7 +199,7 @@ class MyWindow(QMainWindow):
     
     def genFinished(self):
         self.gen_worker.finished.connect(self.gen_thread.quit)
-        self.gen_prog_icon.setPixmap(QPixmap(os.getcwd() + "\\app\\assets\\check.png").scaled(20,20))
+        self.gen_prog_icon.setPixmap(QPixmap("..\\assets\\check.png").scaled(20,20))
         self.gen_prog_text.setText("Finished Generating Frames!")
         self.gen_prog_text.setStyleSheet("color: green")
     

@@ -29,7 +29,7 @@ def split(video_name):
             break
 
         # Saves image of the current frame in jpg file
-        name =  os.getcwd() + '\\originalFrames\\frame' + str(currentFrame) + '.jpg'
+        name =  '..\\originalFrames\\frame' + str(currentFrame) + '.jpg'
         #print('Creating...' + name)
         
         # Write the frame to disk if it's not empty
