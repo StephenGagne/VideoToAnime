@@ -215,7 +215,7 @@ class MyWindow(QMainWindow):
     def stitchVideo(self):
         self.stitch_prog_icon.setVisible(True)
         self.stitch_prog_text.setVisible(True)
-        animated_video_name = self.__file.split("/")[-1].split(".")[0] + "_animated.mp4"
+        animated_video_name = self.__file.split("/")[-1].split(".")[0]
         stitcher.stitch_frames(animated_video_name)
     
     def stitchFinished(self):
