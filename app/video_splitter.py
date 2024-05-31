@@ -6,17 +6,33 @@
 import cv2
 import os
 import sys
+from audio_extractor import extract_audio
 
 def split(video_name):
     # Playing video from file:
     # you can modify the "PutVideoName.mp4" to the video u wanna split
-    cap = cv2.VideoCapture(video_name)
+    input_video_path = video_name
+    project_root = os.path.abspath(os.path.join(os.path.dirname(input_video_path), '..'))
+    output_audio_path = os.path.join(project_root, 'audio', f"{os.path.splitext(os.path.basename(video_name))[0]}.mp3")
+    
+    # Ensure the output directory for audio exists
+    os.makedirs(os.path.dirname(output_audio_path), exist_ok=True)
+
+    # Extract audio
+    try:
+        extract_audio(input_video_path, output_audio_path)
+    except Exception as e:
+        print(f"Error extracting audio: {e}")
+        exit()
+    
+    cap = cv2.VideoCapture(video_name)    
     try:
         # Create target Directory if not exist
-        if not os.path.exists(os.getcwd() + '\\originalFrames'):
-            os.makedirs(os.getcwd() + '\\originalFrames')
-    except OSError:
-        print('Error: Creating directory of originalFrames')
+        frames_dir = os.path.join(project_root, 'originalFrames')
+        if not os.path.exists(frames_dir):
+                    os.makedirs(frames_dir)
+    except OSError as e:
+        print(f'Error: Creating directory of originalFrames - {e}')
 
     currentFrame = 0
     while True:
@@ -29,8 +45,7 @@ def split(video_name):
             break
 
         # Saves image of the current frame in jpg file
-        name = os.getcwd() + '\\originalFrames\\frame' + str(currentFrame) + '.jpg'
-        #print('Creating...' + name)
+        name = os.path.join(frames_dir, f'frame{currentFrame}.jpg')
         
         # Write the frame to disk if it's not empty
         if not frame is None:
