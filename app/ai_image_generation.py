@@ -29,7 +29,7 @@ def ai_generate(enteredPrompt, enteredNegativePrompt):
     #Stable Diffusion Settings
     modelName = "drippyWatercolor_jwlWatercolorDrippy.ckpt"
     # Samplers: dpmpp_sde, ddim
-    sampler = "dpmpp_sde"
+    sampler = "ddim"
     steps = 10
     
     print("Copying Input to Comfy Input")
