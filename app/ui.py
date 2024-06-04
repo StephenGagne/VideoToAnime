@@ -186,7 +186,7 @@ class MyWindow(QMainWindow):
         video_splitter.split(self.__file)
         self.splitFinished()
         self.generateFrames()
-        self.genFinished()
+        self.stitchVideo()
     
     def splitFinished(self):
         self.split_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
