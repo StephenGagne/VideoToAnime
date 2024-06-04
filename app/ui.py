@@ -217,6 +217,7 @@ class MyWindow(QMainWindow):
         self.stitch_prog_text.setVisible(True)
         animated_video_name = self.__file.split("/")[-1].split(".")[0]
         stitcher.stitch_frames(animated_video_name)
+        self.stitchFinished()
     
     def stitchFinished(self):
         self.stitch_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
