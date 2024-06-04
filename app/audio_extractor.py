@@ -1,8 +1,13 @@
 from moviepy.editor import VideoFileClip
 import os
 
-def extract_audio(input_video_path, output_audio_path):
+def extract_audio(video_name):
     # Ensure the input file exists
+
+    input_video_path = video_name
+    project_root = os.path.abspath(os.path.join(os.path.dirname(input_video_path), '..'))
+    output_audio_path = os.path.join(project_root, 'audio', f"{os.path.splitext(os.path.basename(video_name))[0]}.mp3")
+
     if not os.path.exists(input_video_path):
         raise FileNotFoundError(f"The file {input_video_path} does not exist.")
     
