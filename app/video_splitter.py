@@ -5,8 +5,6 @@
 
 import cv2
 import os
-import sys
-from audio_extractor import extract_audio
 
 def split(video_name):
     # Playing video from file:
