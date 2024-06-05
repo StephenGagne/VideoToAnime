@@ -17,7 +17,7 @@ client_id = str(uuid.uuid4())
 # enteredNegativePrompt     A prompt used to excluded certain data from each image
 ##
 
-def ai_generate(enteredPrompt, enteredNegativePrompt):
+def ai_generate(enteredPrompt, enteredNegativePrompt, modelName, sampler, steps):
     #Split frames to use as input
     inputDir = "C:\\VideoToAnime\\originalFrames\\"
     comfyInputDir = "C:\\ComfyUI_windows_portable\\ComfyUI\\input\\"
@@ -27,10 +27,10 @@ def ai_generate(enteredPrompt, enteredNegativePrompt):
     outputDir = "C:\\VideoToAnime\\generatedFrames\\"
     
     #Stable Diffusion Settings
-    modelName = "drippyWatercolor_jwlWatercolorDrippy.ckpt"
+    #modelName = "drippyWatercolor_jwlWatercolorDrippy.ckpt"
     # Samplers: dpmpp_sde, ddim
-    sampler = "ddim"
-    steps = 10
+    #sampler = "ddim"
+    #steps = 10
     
     print("Copying Input to Comfy Input")
     #Copying split frames to ComfyUI input directory
