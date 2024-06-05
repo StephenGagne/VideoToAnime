@@ -28,6 +28,7 @@ import os
 from importlib.metadata import version
 import video_splitter
 import ai_image_generation as img_gen
+import frame_stitcher as stitcher
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -105,6 +106,16 @@ class MyWindow(QMainWindow):
         self.gen_prog_text.setText("Generating frames...")
         self.gen_prog_text.setVisible(False)
         
+        #stitch progress widgets
+        self.stitch_prog_icon = QLabel(self)
+        self.stitch_prog_icon.setGeometry(120, 395, 20, 20)
+        self.stitch_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
+        self.stitch_prog_icon.setVisible(False)
+        self.stitch_prog_text = QLabel(self)
+        self.stitch_prog_text.setGeometry(160, 395, 200, 20)
+        self.stitch_prog_text.setText("Stiching video back together...")
+        self.stitch_prog_text.setVisible(False)
+        
         #properties
         self.properties = QtWidgets.QPushButton(self)
         self.properties.setGeometry(20, 420, 360, 25)
@@ -175,10 +186,9 @@ class MyWindow(QMainWindow):
         video_splitter.split(self.__file)
         self.splitFinished()
         self.generateFrames()
-        self.genFinished()
+        self.stitchVideo()
     
     def splitFinished(self):
-        self.start_worker.finished.connect(self.start_thread.quit)
         self.split_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.split_prog_text.setText("Finished Splitting Frames!")
         self.split_prog_text.setStyleSheet("color: green")
@@ -198,10 +208,21 @@ class MyWindow(QMainWindow):
         self.genFinished()
     
     def genFinished(self):
-        self.gen_worker.finished.connect(self.gen_thread.quit)
         self.gen_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.gen_prog_text.setText("Finished Generating Frames!")
         self.gen_prog_text.setStyleSheet("color: green")
+    
+    def stitchVideo(self):
+        self.stitch_prog_icon.setVisible(True)
+        self.stitch_prog_text.setVisible(True)
+        animated_video_name = self.__file.split("/")[-1].split(".")[0]
+        stitcher.stitch_frames(animated_video_name)
+        self.stitchFinished()
+    
+    def stitchFinished(self):
+        self.stitch_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
+        self.stitch_prog_text.setText("Finished Stitching Video!")
+        self.stitch_prog_text.setStyleSheet("color: green")
     
     def playClicked(self):
         print("Play button clicked!")
@@ -211,7 +232,6 @@ class MyWindow(QMainWindow):
             self.play_worker.moveToThread(self.play_thread)
             self.play_thread.started.connect(self.play_worker.run)
             self.play_thread.start()
-            self.play_worker.finished.connect(self.play_thread.quit)
             
     def playVideo(self):
         file_name = self.__file
@@ -261,7 +281,6 @@ class MyWindow(QMainWindow):
             cv.destroyAllWindows()
     
 class Worker(QObject):
-    finished = pyqtSignal()
     def __init__(self, function, *args, **kwargs):
         super().__init__()
         self.function = function
@@ -270,7 +289,6 @@ class Worker(QObject):
     
     def run(self):
         self.function(*self.args, **self.kwargs)
-        self.finished.emit()
         
 def window():
         app = QApplication(sys.argv)
