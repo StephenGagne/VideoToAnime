@@ -1,4 +1,7 @@
 tempdir
 originalFrames/*.jpg
+originalFrames/*.png
 generatedFrames/*.jpg
+generatedFrames/*.png
+app/__pycache__/*
 {\rtf1}
