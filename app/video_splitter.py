@@ -5,7 +5,6 @@
 
 import cv2
 import os
-import sys
 
 def split(video_name):
     # Playing video from file:
@@ -42,5 +41,4 @@ def split(video_name):
 
     # When everything is done, release the capture
     cap.release()
-    #cv2.destroyAllWindows()
     return
