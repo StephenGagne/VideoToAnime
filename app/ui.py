@@ -19,7 +19,7 @@ Future Plans:
 
 import sys
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap
@@ -38,90 +38,85 @@ class MyWindow(QMainWindow):
         self.setStyleSheet("background-color: #add8e6;") #background color: light blue
         self.__file = None
         self.__frame_total = 0
+        self.__current_model = ""
+        self.__current_sampler = ""
+        self.__current_steps = 5
         self.initUI()
 
     def initUI(self):        
         #upload button
-        self.uploadButton = QtWidgets.QPushButton(self)
-        self.uploadButton.setGeometry(20, 10, 360, 50)
+        self.uploadButton = QPushButton(self)
+        self.uploadButton.setGeometry(20, 10, 175, 50)
         self.uploadButton.setText("Upload")
         self.uploadButton.clicked.connect(self.uploadClicked)
-        self.uploadButton.setStyleSheet("background-color: #f5f5f5; color:black;")
+        self.uploadButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
         self.uploadButton.setToolTip("Upload a video to be processed")
-
-        #start button
-        self.startButton = QtWidgets.QPushButton(self)
-        self.startButton.setGeometry(205, 65, 175, 50)
-        self.startButton.setText("Start")
-        self.startButton.clicked.connect(self.startClicked)
-        self.startButton.setStyleSheet("background-color: darken(foreground, 20);")
-        self.startButton.setEnabled(False)
-        self.startButton.setToolTip("Initiate the conversion process")
         
-        #play button
-        self.playButton = QtWidgets.QPushButton(self)
-        self.playButton.setGeometry(20, 65, 175, 50)
-        self.playButton.setText("Play Video")
-        self.playButton.clicked.connect(self.playClicked)
-        self.playButton.setStyleSheet("background-color: darken(foreground, 20);")
-        self.playButton.setEnabled(False)
-        self.playButton.setToolTip("Play the currently uploaded video")
+        #config button
+        self.uploadButton = QPushButton(self)
+        self.uploadButton.setGeometry(205, 10, 175, 50)
+        self.uploadButton.setText("Config")
+        self.uploadButton.clicked.connect(self.configClicked)
+        self.uploadButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
+        self.uploadButton.setToolTip("Set or change image generation options")
         
         #prompt boxes
         self.positive_prompt_text = QLabel(self)
-        self.positive_prompt_text.setGeometry(20, 120, 105, 50)
+        self.positive_prompt_text.setGeometry(20, 65, 105, 50)
         self.positive_prompt_text.setText("Positive Prompts: ")
         self.positive_prompt = QTextEdit(self)
-        self.positive_prompt.setGeometry(135, 120, 245, 50)
+        self.positive_prompt.setGeometry(135, 65, 245, 50)
         self.negative_prompt_text = QLabel(self)
-        self.negative_prompt_text.setGeometry(20, 175, 105, 50)
+        self.negative_prompt_text.setGeometry(20, 120, 105, 50)
         self.negative_prompt_text.setText("Negative Prompts: ")
         self.negative_prompt = QTextEdit(self)
-        self.negative_prompt.setGeometry(135, 175, 245, 50)
-        
-        #playback progress -= maybe unneeded?
-        self.progress_bar = QtWidgets.QProgressBar(self)
-        self.progress_bar.setGeometry(20, 230, 360, 50)
-        self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
-        self.progress_bar.setFormat("Playback - %p%")
-        self.progress_bar.setVisible(False)
+        self.negative_prompt.setGeometry(135, 120, 245, 50)
+
+        #start button
+        self.startButton = QPushButton(self)
+        self.startButton.setGeometry(20, 175, 360, 50)
+        self.startButton.setText("Start")
+        self.startButton.clicked.connect(self.startClicked)
+        self.startButton.setEnabled(False)
+        self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 0.5); color:grey; border-radius: 12px;")
+        self.startButton.setToolTip("Initiate the conversion process")
 
         #split progress widgets
         self.split_prog_icon = QLabel(self)
-        self.split_prog_icon.setGeometry(120, 305, 20, 20)
+        self.split_prog_icon.setGeometry(120, 255, 20, 20)
         self.split_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
         self.split_prog_icon.setVisible(False)
         self.split_prog_text = QLabel(self)
-        self.split_prog_text.setGeometry(160, 305, 200, 20)
+        self.split_prog_text.setGeometry(160, 255, 200, 20)
         self.split_prog_text.setText("Splitting frames...")
         self.split_prog_text.setVisible(False)
         
         #imggen progress widgets
         self.gen_prog_icon = QLabel(self)
-        self.gen_prog_icon.setGeometry(120, 350, 20, 20)
+        self.gen_prog_icon.setGeometry(120, 310, 20, 20)
         self.gen_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
         self.gen_prog_icon.setVisible(False)
         self.gen_prog_text = QLabel(self)
-        self.gen_prog_text.setGeometry(160, 350, 200, 20)
+        self.gen_prog_text.setGeometry(160, 310, 200, 20)
         self.gen_prog_text.setText("Generating frames...")
         self.gen_prog_text.setVisible(False)
         
         #stitch progress widgets
         self.stitch_prog_icon = QLabel(self)
-        self.stitch_prog_icon.setGeometry(120, 395, 20, 20)
+        self.stitch_prog_icon.setGeometry(120, 365, 20, 20)
         self.stitch_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
         self.stitch_prog_icon.setVisible(False)
         self.stitch_prog_text = QLabel(self)
-        self.stitch_prog_text.setGeometry(160, 395, 200, 20)
+        self.stitch_prog_text.setGeometry(160, 365, 200, 20)
         self.stitch_prog_text.setText("Stiching video back together...")
         self.stitch_prog_text.setVisible(False)
         
         #properties
-        self.properties = QtWidgets.QPushButton(self)
+        self.properties = QPushButton(self)
         self.properties.setGeometry(20, 420, 360, 25)
         self.properties.setText("Project Properties")
         self.properties.clicked.connect(self.showProperties)
-        self.properties.setStyleSheet("background-color: #f5f5f5; color:black;")
+        self.properties.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
         self.properties.setToolTip("Show project properties, including the current video and system properties")
         
 
@@ -141,7 +136,9 @@ class MyWindow(QMainWindow):
             current_prompt_n = "No negative prompts selected."
         else:
             current_prompt_n = self.negative_prompt.toPlainText()  
-        properties_text = "Current Project: \n\t" + current_project + "\nCurrent Positive Prompts: \n\t" + current_prompt_p + "\nCurrent Negative Prompts: \n\t" + current_prompt_n
+            
+            
+        properties_text = "Current Project: \n\t" + current_project + "\nCurrent Model: \n\t" + self.__current_model + "\nCurrent Sampler: \n\t" + self.__current_sampler + "\nCurrent Steps: \n\t" + str(self.__current_steps) + "\nCurrent Positive Prompts: \n\t" + current_prompt_p + "\nCurrent Negative Prompts: \n\t" + current_prompt_n
         versions_text = "Current Python Version: " + current_py + "\nCurrent PyQt Version: " + current_qt + "\nCurrent OpenCV Version: " + current_cv
         props = QMessageBox()
         props.setWindowTitle("Project Properties")
@@ -154,23 +151,82 @@ class MyWindow(QMainWindow):
         options = QFileDialog.Options()
         file_types = "Video Files (*.mp4 *.avi *.mov);;All Files (*)"
         file_name, _ = QFileDialog.getOpenFileName(self,"Select Video File", "", file_types, options=options)
+        if not file_name.endswith(".mp4") or file_name.endswith(".avi") or file_name.endswith(".mov"):
+            typeerr = QMessageBox()
+            typeerr.setWindowTitle("Error - Incorrect file type!")
+            typeerr.setIcon(QMessageBox.Critical)
+            typeerr.setText("Please upload a .mp4, .avi, or .mov video file!")
+            typeerr.exec_()
+            return
+        
         self.__file = file_name
         
         cap = cv.VideoCapture(file_name)
         self.__frame_total = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
         cap.release()
-        
-        self.playButton.setEnabled(True)
+
         self.startButton.setEnabled(True)
-        self.playButton.setStyleSheet("background-color: #f5f5f5; color: black;")
-        self.startButton.setStyleSheet("background-color: #f5f5f5; color: black;")
+        self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color: black; border-radius: 12px;")
+      
+    def configClicked(self):
+        config = QDialog()
+        config.setStyleSheet("background-color: #add8e6;")
+        config.setWindowTitle("Generation Config")
+        config.setGeometry(200, 200, 500, 250)
+        model_text = QLabel("Select Model: ", config)
+        model_text.setGeometry(20, 20, 235, 50)
+        sampler_text = QLabel("Select Sampler:", config)
+        sampler_text.setGeometry(20, 75, 235, 50)
+        steps_text = QLabel("Select Number of Steps: ", config)
+        steps_text.setGeometry(20, 125, 235, 50)
+        models = os.listdir("../config/Models")
+        for model in models:
+            model.split("/")[-1]
+        samplers = ['euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'spm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'spmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'ddim', 'uni_pc', 'uni_pc_bh2']
+
+        model_combo = QComboBox(config)
+        model_combo.setGeometry(230, 20, 235, 50)
+        model_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
+        model_combo.addItems(models)
+        #self.__current_model = "../config/Models/" + model_combo.currentText()
+        
+        sampler_combo = QComboBox(config)
+        sampler_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
+        sampler_combo.setGeometry(230, 75, 235, 50)
+        sampler_combo.addItems(samplers)
+        
+        steps_spinner = QSpinBox(config)
+        steps_spinner.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
+        steps_spinner.setGeometry(230, 130, 50, 40)
+        steps_spinner.setMinimum(1)
+        steps_spinner.setSingleStep(1)
+        
+        save_config = QPushButton("Save", config)
+        save_config.setGeometry(200, 180, 50, 50)
+        save_config.setStyleSheet("background-color: rgba(245, 245, 245, 1); border-radius: 12px;")
+        save_config.clicked.connect(lambda: self.saveConfig(model_combo.currentText(), sampler_combo.currentText(), steps_spinner.value()))
+        
+        config.exec_()
+      
+    def saveConfig(self, model, sampler, steps):
+         self.__current_model = "../config/Models/" + model
+         self.__current_sampler = sampler
+         self.__current_steps = steps
       
     def startClicked(self):
         if self.positive_prompt.toPlainText() == "":
+            errdlg1 = QMessageBox()
+            errdlg1.setWindowTitle("Error - No Positive Prompts!")
+            errdlg1.setIcon(QMessageBox.Critical)
+            errdlg1.setText("Please add positive prompts before trying again!")
+            errdlg1.exec_()
+            return
+        
+        if self.__current_model == None or self.__current_sampler == None:
             errdlg = QMessageBox()
-            errdlg.setWindowTitle("Error - No Positive Prompts!")
+            errdlg.setWindowTitle("Error - Configuration not set!")
             errdlg.setIcon(QMessageBox.Critical)
-            errdlg.setText("Please add positive prompts before trying again!")
+            errdlg.setText("Please add generation configuration options (Sampler or Model)!")
             errdlg.exec_()
             return
         if self.__file is not None:
@@ -204,7 +260,7 @@ class MyWindow(QMainWindow):
             prompt_n = ""
         else:
             prompt_n = self.negative_prompt.toPlainText()
-        img_gen.ai_generate(prompt_p, prompt_n)
+        img_gen.ai_generate(prompt_p, prompt_n, self.__current_model, self.__current_sampler, self.__current_steps)
         self.genFinished()
     
     def genFinished(self):
