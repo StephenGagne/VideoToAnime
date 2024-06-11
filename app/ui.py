@@ -220,7 +220,7 @@ class MyWindow(QMainWindow):
         config.exec_()
       
     def saveConfig(self, model, sampler, steps):
-         self.__current_model = "../config/Models/" + model
+         self.__current_model = model
          self.__current_sampler = sampler
          self.__current_steps = steps
       
@@ -258,7 +258,7 @@ class MyWindow(QMainWindow):
     def splitFinished(self):
         self.split_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.split_prog_text.setText("Finished Splitting Frames!")
-      #  self.split_prog_text.setStyleSheet("color: green")
+        #self.split_prog_text.setStyleSheet("color: green")
     
     def generateFrames(self):
         self.gen_prog_icon.setVisible(True)
