@@ -1,8 +1,8 @@
 """
 This script implement PyQt5 GUI application for uploading
 and displaying video using OpenCV
-Author: Vy Chau
-Date: 04.04.2024
+Author: Zachary and Vy 
+Date: 10.06.2024
 """
 
 '''
@@ -19,7 +19,8 @@ Future Plans:
 
 import sys
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton
+from pathlib import Path
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap
@@ -35,7 +36,8 @@ class MyWindow(QMainWindow):
         super(MyWindow, self).__init__()
         self.setGeometry(200, 200, 400, 450)  #set size and position of window
         self.setWindowTitle("Project - Group 8")
-        self.setStyleSheet("background-color: #add8e6;") #background color: light blue
+        self.setFixedSize(400, 450)  # Prevent resizing
+       # self.setStyleSheet("background-color: #add8e6;") #background color: light blue
         self.__file = None
         self.__frame_total = 0
         self.__current_model = ""
@@ -43,22 +45,32 @@ class MyWindow(QMainWindow):
         self.__current_steps = 5
         self.initUI()
 
-    def initUI(self):        
+    def initUI(self): 
+        #add widget 
+        mainWindow = QWidget()
+        self.setCentralWidget(mainWindow)
+
+        #create a vertical layout: upload - config - prompts - start - properties
+        VLayout = QVBoxLayout()
+        mainWindow.setLayout(VLayout)
+
+        #creat a horizontal layout for upload and config buttons
+        HLayout = QHBoxLayout()
+        mainWindow.setLayout(HLayout)
+
         #upload button
         self.uploadButton = QPushButton(self)
         self.uploadButton.setGeometry(20, 10, 175, 50)
         self.uploadButton.setText("Upload")
         self.uploadButton.clicked.connect(self.uploadClicked)
-        self.uploadButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
         self.uploadButton.setToolTip("Upload a video to be processed")
-        
+
         #config button
-        self.uploadButton = QPushButton(self)
-        self.uploadButton.setGeometry(205, 10, 175, 50)
-        self.uploadButton.setText("Config")
-        self.uploadButton.clicked.connect(self.configClicked)
-        self.uploadButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
-        self.uploadButton.setToolTip("Set or change image generation options")
+        self.configButton = QPushButton(self)
+        self.configButton.setGeometry(205, 10, 175, 50)
+        self.configButton.setText("Config")
+        self.configButton.clicked.connect(self.configClicked)
+        self.configButton.setToolTip("Set or change image generation options")
         
         #prompt boxes
         self.positive_prompt_text = QLabel(self)
@@ -78,7 +90,7 @@ class MyWindow(QMainWindow):
         self.startButton.setText("Start")
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setEnabled(False)
-        self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 0.5); color:grey; border-radius: 12px;")
+       # self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 0.5); color:grey; border-radius: 12px;")
         self.startButton.setToolTip("Initiate the conversion process")
 
         #split progress widgets
@@ -116,9 +128,8 @@ class MyWindow(QMainWindow):
         self.properties.setGeometry(20, 420, 360, 25)
         self.properties.setText("Project Properties")
         self.properties.clicked.connect(self.showProperties)
-        self.properties.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
+      #  self.properties.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
         self.properties.setToolTip("Show project properties, including the current video and system properties")
-        
 
     def showProperties(self):
         current_qt = version('PyQt5')
@@ -166,11 +177,11 @@ class MyWindow(QMainWindow):
         cap.release()
 
         self.startButton.setEnabled(True)
-        self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color: black; border-radius: 12px;")
+      #  self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color: black; border-radius: 12px;")
       
     def configClicked(self):
         config = QDialog()
-        config.setStyleSheet("background-color: #add8e6;")
+      #  config.setStyleSheet("background-color: #add8e6;")
         config.setWindowTitle("Generation Config")
         config.setGeometry(200, 200, 500, 250)
         model_text = QLabel("Select Model: ", config)
@@ -186,24 +197,24 @@ class MyWindow(QMainWindow):
 
         model_combo = QComboBox(config)
         model_combo.setGeometry(230, 20, 235, 50)
-        model_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
+     #   model_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
         model_combo.addItems(models)
         #self.__current_model = "../config/Models/" + model_combo.currentText()
         
         sampler_combo = QComboBox(config)
-        sampler_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
+     #   sampler_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
         sampler_combo.setGeometry(230, 75, 235, 50)
         sampler_combo.addItems(samplers)
         
         steps_spinner = QSpinBox(config)
-        steps_spinner.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
+     #   steps_spinner.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
         steps_spinner.setGeometry(230, 130, 50, 40)
         steps_spinner.setMinimum(1)
         steps_spinner.setSingleStep(1)
         
         save_config = QPushButton("Save", config)
         save_config.setGeometry(200, 180, 50, 50)
-        save_config.setStyleSheet("background-color: rgba(245, 245, 245, 1); border-radius: 12px;")
+     #   save_config.setStyleSheet("background-color: rgba(245, 245, 245, 1); border-radius: 12px;")
         save_config.clicked.connect(lambda: self.saveConfig(model_combo.currentText(), sampler_combo.currentText(), steps_spinner.value()))
         
         config.exec_()
@@ -247,7 +258,7 @@ class MyWindow(QMainWindow):
     def splitFinished(self):
         self.split_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.split_prog_text.setText("Finished Splitting Frames!")
-        self.split_prog_text.setStyleSheet("color: green")
+      #  self.split_prog_text.setStyleSheet("color: green")
     
     def generateFrames(self):
         self.gen_prog_icon.setVisible(True)
@@ -266,7 +277,7 @@ class MyWindow(QMainWindow):
     def genFinished(self):
         self.gen_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.gen_prog_text.setText("Finished Generating Frames!")
-        self.gen_prog_text.setStyleSheet("color: green")
+      #  self.gen_prog_text.setStyleSheet("color: green")
     
     def stitchVideo(self):
         self.stitch_prog_icon.setVisible(True)
@@ -278,7 +289,7 @@ class MyWindow(QMainWindow):
     def stitchFinished(self):
         self.stitch_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.stitch_prog_text.setText("Finished Stitching Video!")
-        self.stitch_prog_text.setStyleSheet("color: green")
+     #   self.stitch_prog_text.setStyleSheet("color: green")
     
     def playClicked(self):
         print("Play button clicked!")
@@ -348,6 +359,7 @@ class Worker(QObject):
         
 def window():
         app = QApplication(sys.argv)
+        app.setStyleSheet(Path('./styles.qss').read_text())
         win = MyWindow()
         win.show()
         sys.exit(app.exec_())

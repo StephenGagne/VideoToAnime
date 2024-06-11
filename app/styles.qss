@@ -1,0 +1,45 @@
+/* General styling */
+* {
+    font-size: 14px;
+}
+
+/* Base styles for widgets */
+QWidget {
+    background-color: #bfe1ed;
+}
+
+/* Button styles */
+QPushButton {
+    background-color: rgba(255, 255, 255, 0.899);
+    color: black;
+    border-radius: 12px;
+}
+
+QPushButton:disabled {
+    background-color: rgba(245, 245, 245, 0.5);
+    color: grey;
+}
+
+/* Text styles */
+QLabel,
+QTextEdit {
+    color: black;
+}
+
+/* Input field styles */
+QTextEdit,
+QComboBox,
+QSpinBox {
+    background-color: rgba(245, 245, 245, 1);
+}
+
+/* Progress bar styles */
+QProgressBar {
+    background-color: white;
+    border: 1px solid grey;
+    border-radius: 5px;
+}
+
+QProgressBar::chunk {
+    background-color: green;
+}
