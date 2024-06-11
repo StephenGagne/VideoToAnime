@@ -28,7 +28,7 @@ import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
 import video_splitter
-import ai_image_generation as img_gen
+#import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 
 class MyWindow(QMainWindow):
@@ -191,8 +191,8 @@ class MyWindow(QMainWindow):
         steps_text = QLabel("Select Number of Steps: ", config)
         steps_text.setGeometry(20, 125, 235, 50)
         models = os.listdir("../config/Models")
-        for model in models:
-            model.split("/")[-1]
+        for idx, model in enumerate(models):
+            models[idx] = models[idx].split("/")[-1].rsplit(".")[0]
         samplers = ['euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'spm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'spmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'ddim', 'uni_pc', 'uni_pc_bh2']
 
         model_combo = QComboBox(config)
@@ -209,7 +209,7 @@ class MyWindow(QMainWindow):
         steps_spinner = QSpinBox(config)
      #   steps_spinner.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
         steps_spinner.setGeometry(230, 130, 50, 40)
-        steps_spinner.setMinimum(1)
+        steps_spinner.setRange(10, 50)
         steps_spinner.setSingleStep(1)
         
         save_config = QPushButton("Save", config)
@@ -271,7 +271,7 @@ class MyWindow(QMainWindow):
             prompt_n = ""
         else:
             prompt_n = self.negative_prompt.toPlainText()
-        img_gen.ai_generate(prompt_p, prompt_n, self.__current_model, self.__current_sampler, self.__current_steps)
+        #img_gen.ai_generate(prompt_p, prompt_n, self.__current_model, self.__current_sampler, self.__current_steps)
         self.genFinished()
     
     def genFinished(self):
@@ -359,7 +359,7 @@ class Worker(QObject):
         
 def window():
         app = QApplication(sys.argv)
-        app.setStyleSheet(Path('./styles.qss').read_text())
+        app.setStyleSheet(Path('../config/styles.qss').read_text())
         win = MyWindow()
         win.show()
         sys.exit(app.exec_())
