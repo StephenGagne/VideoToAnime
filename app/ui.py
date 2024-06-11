@@ -28,7 +28,7 @@ import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
 import video_splitter
-#import ai_image_generation as img_gen
+import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 
 class MyWindow(QMainWindow):
@@ -271,7 +271,7 @@ class MyWindow(QMainWindow):
             prompt_n = ""
         else:
             prompt_n = self.negative_prompt.toPlainText()
-        #img_gen.ai_generate(prompt_p, prompt_n, self.__current_model, self.__current_sampler, self.__current_steps)
+        img_gen.ai_generate(prompt_p, prompt_n, self.__current_model, self.__current_sampler, self.__current_steps)
         self.genFinished()
     
     def genFinished(self):
