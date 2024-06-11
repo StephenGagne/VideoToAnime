@@ -192,7 +192,7 @@ class MyWindow(QMainWindow):
         steps_text.setGeometry(20, 125, 235, 50)
         models = os.listdir("../config/Models")
         for idx, model in enumerate(models):
-            models[idx] = models[idx].split("/")[-1].rsplit(".")[0]
+            models[idx] = models[idx].split("/")[-1]
         samplers = ['euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'spm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'spmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'ddim', 'uni_pc', 'uni_pc_bh2']
 
         model_combo = QComboBox(config)
@@ -258,7 +258,7 @@ class MyWindow(QMainWindow):
     def splitFinished(self):
         self.split_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.split_prog_text.setText("Finished Splitting Frames!")
-        #self.split_prog_text.setStyleSheet("color: green")
+        self.split_prog_text.setStyleSheet("color: green")
     
     def generateFrames(self):
         self.gen_prog_icon.setVisible(True)
@@ -277,7 +277,7 @@ class MyWindow(QMainWindow):
     def genFinished(self):
         self.gen_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.gen_prog_text.setText("Finished Generating Frames!")
-      #  self.gen_prog_text.setStyleSheet("color: green")
+        self.gen_prog_text.setStyleSheet("color: green")
     
     def stitchVideo(self):
         self.stitch_prog_icon.setVisible(True)
@@ -289,7 +289,7 @@ class MyWindow(QMainWindow):
     def stitchFinished(self):
         self.stitch_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.stitch_prog_text.setText("Finished Stitching Video!")
-     #   self.stitch_prog_text.setStyleSheet("color: green")
+        self.stitch_prog_text.setStyleSheet("color: green")
     
     def playClicked(self):
         print("Play button clicked!")
