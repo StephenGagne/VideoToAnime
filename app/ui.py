@@ -8,13 +8,12 @@ Date: 10.06.2024
 '''
 Current known issues:
 - After playback (natural end or interruption), program will terminate instead of waiting for another button press
-- Widget geometry is hard-coded, should be programmatically determined
+- Widget geometry is hard-coded, should be programmatically determined?
 '''
 '''
 Future Plans:
-- Further Implement Start functionality (AI-integration, frame stitching)
-- Implement threading for frame splitting to align with a progress bar
-- Refactor to allow for external QSS stylesheets?
+- Add feedback/response text for config save button
+- Redesign appearance for v2
 '''
 
 import sys
@@ -37,9 +36,9 @@ class MyWindow(QMainWindow):
         self.setGeometry(200, 200, 400, 450)  #set size and position of window
         self.setWindowTitle("Project - Group 8")
         self.setFixedSize(400, 450)  # Prevent resizing
-       # self.setStyleSheet("background-color: #add8e6;") #background color: light blue
         self.__file = None
         self.__frame_total = 0
+        self.__recover_frame = 1
         self.__current_model = ""
         self.__current_sampler = ""
         self.__current_steps = 5
@@ -90,7 +89,6 @@ class MyWindow(QMainWindow):
         self.startButton.setText("Start")
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setEnabled(False)
-       # self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 0.5); color:grey; border-radius: 12px;")
         self.startButton.setToolTip("Initiate the conversion process")
 
         #split progress widgets
@@ -128,8 +126,10 @@ class MyWindow(QMainWindow):
         self.properties.setGeometry(20, 420, 360, 25)
         self.properties.setText("Project Properties")
         self.properties.clicked.connect(self.showProperties)
-      #  self.properties.setStyleSheet("background-color: rgba(245, 245, 245, 1); color:black; border-radius: 12px;")
         self.properties.setToolTip("Show project properties, including the current video and system properties")
+        
+        if len(os.listdir("../generatedFrames")) > 1:
+            self.recoverDetected()
 
     def showProperties(self):
         current_qt = version('PyQt5')
@@ -177,11 +177,9 @@ class MyWindow(QMainWindow):
         cap.release()
 
         self.startButton.setEnabled(True)
-      #  self.startButton.setStyleSheet("background-color: rgba(245, 245, 245, 1); color: black; border-radius: 12px;")
       
     def configClicked(self):
         config = QDialog()
-      #  config.setStyleSheet("background-color: #add8e6;")
         config.setWindowTitle("Generation Config")
         config.setGeometry(200, 200, 500, 250)
         model_text = QLabel("Select Model: ", config)
@@ -193,35 +191,33 @@ class MyWindow(QMainWindow):
         models = os.listdir("../config/Models")
         for idx, model in enumerate(models):
             models[idx] = models[idx].split("/")[-1]
-        samplers = ['euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'spm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'spmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'ddim', 'uni_pc', 'uni_pc_bh2']
+        samplers = ['ddim (default)', 'euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'spm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'spmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'uni_pc', 'uni_pc_bh2']
 
         model_combo = QComboBox(config)
         model_combo.setGeometry(230, 20, 235, 50)
-     #   model_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
         model_combo.addItems(models)
-        #self.__current_model = "../config/Models/" + model_combo.currentText()
         
         sampler_combo = QComboBox(config)
-     #   sampler_combo.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
         sampler_combo.setGeometry(230, 75, 235, 50)
         sampler_combo.addItems(samplers)
         
         steps_spinner = QSpinBox(config)
-     #   steps_spinner.setStyleSheet("background-color: rgba(245, 245, 245, 1);")
         steps_spinner.setGeometry(230, 130, 50, 40)
         steps_spinner.setRange(10, 50)
         steps_spinner.setSingleStep(1)
         
         save_config = QPushButton("Save", config)
         save_config.setGeometry(200, 180, 50, 50)
-     #   save_config.setStyleSheet("background-color: rgba(245, 245, 245, 1); border-radius: 12px;")
         save_config.clicked.connect(lambda: self.saveConfig(model_combo.currentText(), sampler_combo.currentText(), steps_spinner.value()))
         
         config.exec_()
       
     def saveConfig(self, model, sampler, steps):
          self.__current_model = model
-         self.__current_sampler = sampler
+         if sampler == 'ddim (default)':
+             self.__current_sample = 'ddim'
+         else:
+            self.__current_sampler = sampler
          self.__current_steps = steps
       
     def startClicked(self):
@@ -346,6 +342,101 @@ class MyWindow(QMainWindow):
                     break
             cap.release()
             cv.destroyAllWindows()
+            
+    def recoverDetected(self):
+        self.uploadButton.setVisible(False)
+        self.configButton.setVisible(False)
+        self.positive_prompt_text.setVisible(False)
+        self.positive_prompt.setVisible(False)
+        self.negative_prompt_text.setVisible(False)
+        self.negative_prompt.setVisible(False)
+        self.startButton.setVisible(False)
+        self.properties.setVisible(False)
+        
+        self.recover_label_1 = QLabel("An unfinished project was detected.", self)
+        self.recover_label_1.setGeometry(20, 75, 360, 25)
+        self.recover_label_1.setAlignment(Qt.AlignCenter)
+        self.recover_label_1.setStyleSheet("color: red;")
+        
+        self.recover_label_2 = QLabel("Do you want to recover progress?", self)
+        self.recover_label_2.setGeometry(20, 105, 360, 25)
+        self.recover_label_2.setAlignment(Qt.AlignCenter)
+        self.recover_label_2.setStyleSheet("font-weight: bold;")
+
+        self.recover_yes = QPushButton(self)
+        self.recover_yes.setText("Yes, Recover Project")
+        self.recover_yes.setGeometry(20, 140, 175, 50)
+        self.recover_yes.clicked.connect(self.recoverProject)
+    
+        self.recover_no = QPushButton(self)
+        self.recover_no.setText("No, Overwrite Project")
+        self.recover_no.setGeometry(205, 140, 175, 50)
+        self.recover_no.clicked.connect(self.confirmOverwrite)
+        
+        self.recover_thumbnail = QLabel(self)
+        self.recover_thumbnail.setGeometry(104, 210, 200, 200)
+        self.recover_thumbnail.setAlignment(Qt.AlignCenter)
+        self.recover_thumbnail.setPixmap(QPixmap("../generatedFrames/frame0.png").scaled(208,117))
+        
+    
+    def recoverProject(self):
+        recovered_frames = os.listdir("../generatedFrames")
+        self.__recover_frame = len(recovered_frames) - 1 # subtract README
+        print(self.__recover_frame)
+        
+        self.recover_label_1.setVisible(False)
+        self.recover_label_2.setVisible(False)
+        self.recover_yes.setVisible(False)
+        self.recover_no.setVisible(False)
+        self.recover_thumbnail.setVisible(False)
+        
+        self.uploadButton.setVisible(True)
+        self.configButton.setVisible(True)
+        self.positive_prompt_text.setVisible(True)
+        self.positive_prompt.setVisible(True)
+        self.negative_prompt_text.setVisible(True)
+        self.negative_prompt.setVisible(True)
+        self.startButton.setVisible(True)
+        self.properties.setVisible(True)
+    
+    def confirmOverwrite(self):
+        self.recover_label_1.setText("This will permanently delete the previous project.")
+        self.recover_label_2.setText("Would you like to continue?")
+        
+        self.recover_yes.setText("Yes, Overwrite Project")
+        self.recover_yes.setStyleSheet("background-color: red; color: white")
+        self.recover_yes.clicked.connect(self.overwriteProject)
+        
+        self.recover_no.setText("No")
+        self.recover_no.clicked.connect(self.recoverDetected)
+        
+    def overwriteProject(self):
+        folder = os.listdir("../generatedFrames")
+        for file in folder:
+            path = os.path.join("../generatedFrames/", file)
+            if os.path.isfile(path) and path.endswith(".png"):
+                os.remove(path)
+        folder = os.listdir("../originalFrames")
+        for file in folder:
+            path = os.path.join("../originalFrames/", file)
+            if os.path.isfile(path) and path.endswith(".png"):
+                os.remove(path)
+
+        self.recover_label_1.setVisible(False)
+        self.recover_label_2.setVisible(False)
+        self.recover_yes.setVisible(False)
+        self.recover_no.setVisible(False)
+        self.recover_thumbnail.setVisible(False)
+        
+        self.uploadButton.setVisible(True)
+        self.configButton.setVisible(True)
+        self.positive_prompt_text.setVisible(True)
+        self.positive_prompt.setVisible(True)
+        self.negative_prompt_text.setVisible(True)
+        self.negative_prompt.setVisible(True)
+        self.startButton.setVisible(True)
+        self.properties.setVisible(True)
+            
     
 class Worker(QObject):
     def __init__(self, function, *args, **kwargs):
