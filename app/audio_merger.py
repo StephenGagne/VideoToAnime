@@ -1,49 +1,47 @@
-import ffmpeg
+
 import os
+from moviepy.editor import VideoFileClip, AudioFileClip
+
+def file_exists(file_path):
+    """Check if a file exists."""
+    return os.path.isfile(file_path)
+
+def check_lengths(video_path, audio_path):
+    """Check if the lengths of the video and audio are the same."""
+    video_clip = VideoFileClip(video_path)
+    audio_clip = AudioFileClip(audio_path)
+    
+    video_duration = video_clip.duration
+    audio_duration = audio_clip.duration
+    
+    return video_duration == audio_duration
 
 def merge_audio_to_video(video_path, audio_path, output_path):
-    # Check if the input files exist
-    if not os.path.exists(video_path):
-        raise FileNotFoundError(f"Video file not found: {video_path}")
-    if not os.path.exists(audio_path):
-        raise FileNotFoundError(f"Audio file not found: {audio_path}")
-
-    # Check if the output directory exists, if not create it
-    output_dir = os.path.dirname(output_path)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    """Merge an audio file to a video file if they exist and have the same length."""
+    if not file_exists(video_path):
+        print(f"Video file '{video_path}' does not exist.")
+        return
+    if not file_exists(audio_path):
+        print(f"Audio file '{audio_path}' does not exist.")
+        return
     
-    try:
-        # Get video and audio duration
-        video_info = ffmpeg.probe(video_path)
-        audio_info = ffmpeg.probe(audio_path)
-        video_duration = float(video_info['format']['duration'])
-        audio_duration = float(audio_info['format']['duration'])
+    # Load video clip
+    video_clip = VideoFileClip(video_path)
 
-        # Adjust audio duration if it is shorter than video duration
-        if audio_duration < video_duration:
-            audio_filter = f"apad=pad_dur={video_duration}"
-        else:
-            audio_filter = None
+    # Load audio clip
+    audio_clip = AudioFileClip(audio_path)
 
-        # Merge audio with video
-        input_video = ffmpeg.input(video_path)
-        input_audio = ffmpeg.input(audio_path)
-        
-        if audio_filter:
-            input_audio = input_audio.filter('apad', pad_dur=video_duration)
-        
-        ffmpeg.output(input_video, input_audio, output_path, vcodec='copy', acodec='aac', strict='experimental').run(overwrite_output=True)
-        
-        print(f"Merged video saved to {output_path}")
+    # Set audio of the video clip to the audio clip
+    video_clip = video_clip.set_audio(audio_clip)
 
-    except ffmpeg.Error as e:
-        print(f"Error occurred: {e.stderr.decode()}")
+    # Write the output file
+    video_clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
 
-if __name__ == "__main__":
-    # Example usage
-    video_path = "..\\videoExtract\\tenSeconds_no_audio.mov"
-    audio_path = "..\\audio\\tenSeconds.mp3"
-    output_path = "..\\output"
+    print(f"Successfully merged audio with video. Output saved at '{output_path}'")
 
-    merge_audio_to_video(video_path, audio_path, output_path)
+# Example usage
+video_path = "..\\videoExtract\\tenSeconds_no_audio.mov"  # or .mov
+audio_path = "..\\audio\\tenSeconds.mp3"
+output_path = "..\\output\\video_with_audio.mov"  # or .mov
+
+merge_audio_to_video(video_path, audio_path, output_path)
