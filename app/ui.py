@@ -40,8 +40,8 @@ class MyWindow(QMainWindow):
         self.__file = None
         self.__frame_total = 0
         self.__recover_frame = 1
-        self.__current_model = "drippyWatercolor_jwlWatercolorDrippy.ckpt"
-        self.__current_sampler = "ddim"
+        self.__current_model = ""
+        self.__current_sampler = ""
         self.__current_steps = 10
         self.initUI()
 
@@ -216,7 +216,7 @@ class MyWindow(QMainWindow):
     def saveConfig(self, model, sampler, steps):
          self.__current_model = model
          if sampler == 'ddim (default)':
-             self.__current_sample = 'ddim'
+             self.__current_sampler = 'ddim'
          else:
             self.__current_sampler = sampler
          self.__current_steps = steps
