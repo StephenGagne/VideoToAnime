@@ -29,6 +29,7 @@ from importlib.metadata import version
 import video_splitter
 import ai_image_generation as img_gen
 import frame_stitcher as stitcher
+from cleanup import cleanup
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -39,9 +40,9 @@ class MyWindow(QMainWindow):
         self.__file = None
         self.__frame_total = 0
         self.__recover_frame = 1
-        self.__current_model = ""
-        self.__current_sampler = ""
-        self.__current_steps = 5
+        self.__current_model = "drippyWatercolor_jwlWatercolorDrippy.ckpt"
+        self.__current_sampler = "ddim"
+        self.__current_steps = 10
         self.initUI()
 
     def initUI(self): 
@@ -286,6 +287,7 @@ class MyWindow(QMainWindow):
         self.stitch_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.stitch_prog_text.setText("Finished Stitching Video!")
         self.stitch_prog_text.setStyleSheet("color: green")
+        cleanup()
     
     def playClicked(self):
         print("Play button clicked!")
