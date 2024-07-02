@@ -1,17 +1,36 @@
+"""
+This script uses a pre-trained ML model to detect, crop, and save faces found in video frames.
+Author: Michael Putnik 
+Updated: 07/02/2024
+
+See README.txt for usage.
+"""
+
 import cv2
 import sys
 import os
 import numpy as np
 
-def detect_faces(image_path, face_index):
-    # Load the pre-trained deep learning face detector
+def detect_faces(image_path, face_counter):
+    """
+    Detect faces in an image using a pre-trained deep learning face detector.
+
+    Parameters:
+    - image_path (str): Path to the input image.
+    - face_counter (int): Counter for naming the detected face images.
+
+    Returns:
+    - Updated face_counter (int): Counter incremented for the next face image.
+    """
+
+    # Load pre-trained deep learning face detector
     face_net = cv2.dnn.readNetFromCaffe("deploy.prototxt.txt", "res10_300x300_ssd_iter_140000.caffemodel")
 
-    # Read the input image
+    # Read input image
     image = cv2.imread(image_path)
     if image is None:
         print(f"Error: Could not read image {image_path}")
-        return
+        return face_counter
 
     # Get image dimensions
     (h, w) = image.shape[:2]
@@ -23,8 +42,8 @@ def detect_faces(image_path, face_index):
     face_net.setInput(blob)
     detections = face_net.forward()
 
-    # Create a directory to save the cropped faces if it doesn't already exist
-    output_dir = 'frontal_faces'
+    # Create output directory
+    output_dir = 'detected_faces'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -50,17 +69,25 @@ def detect_faces(image_path, face_index):
 
             # Check if the face region is not empty
             if face.size > 0:
-                # Save the cropped face to the output directory with incrementing filenames
-                face_filename = os.path.join(output_dir, f'face_{face_index}.jpg')
+                # Save the cropped face to the output directory
+                face_filename = os.path.join(output_dir, f'face_{face_counter}.jpg')
                 status = cv2.imwrite(face_filename, face)
 
                 print(f"[INFO] Image {face_filename} written to filesystem: ", status)
 
-                # Increment the face index for the next face
-                face_index += 1
+                face_counter += 1
 
-def main():
-    # Define the directory containing the images
+    return face_counter
+
+def run_detection():
+    """
+    Process each image file in a directory, detect faces, and save them.
+
+    This function iterates through all image files in a specified directory,
+    calls detect_faces function for each image, and manages face counting.
+    """
+
+    # Define the directory containing images
     input_dir = '../originalFrames'
 
     if not os.path.exists(input_dir):
@@ -74,18 +101,15 @@ def main():
         print(f"No images found in directory {input_dir}")
         sys.exit(1)
 
-    # Initialize the face index
-    face_index = 1
+    # Initialize face counter
+    face_counter = 1
 
     # Process each image file in the directory
     for image_file in image_files:
         image_path = os.path.join(input_dir, image_file)
 
         print(f"[INFO] Processing {image_path}")
-        detect_faces(image_path, face_index)
+        face_counter = detect_faces(image_path, face_counter)
 
-        # Increment the face index for the next image
-        face_index += 1
-
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+#    run_detection()
