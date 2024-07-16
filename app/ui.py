@@ -2,47 +2,44 @@
 This script implement PyQt5 GUI application for uploading
 and displaying video using OpenCV
 Author: Zachary and Vy 
-Date: 10.06.2024
+Date: 2024-07-16
 """
 
 '''
 Current known issues:
-- After playback (natural end or interruption), program will terminate instead of waiting for another button press
-- Widget geometry is hard-coded, should be programmatically determined?
+- *Some* widget geometry is hard-coded, should be programmatically determined?
 '''
 '''
 Future Plans:
-- Add feedback/response text for config save button
-- Redesign appearance for v2
+- Finish implementing v2 UI (e.g. recover untested in v2 as of 2024-07-16)
 '''
 
 import sys
 import time
 from pathlib import Path
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QMovie
 import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
 import video_splitter
-import ai_image_generation as img_gen
+#import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 from cleanup import cleanup
 
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
-        self.setGeometry(200, 200, 400, 450)  #set size and position of window
+        self.width = 400
+        self.height = 450
+        self.setGeometry(200, 200, 400, 675)  #set size and position of window
         self.setWindowTitle("Project - Group 8")
-        self.setFixedSize(400, 450)  # Prevent resizing
+        self.setFixedSize(400, 675)  # Prevent resizing
         self.__file = None
         self.__frame_total = 0
         self.__recover_frame = 1
-        self.__current_model = ""
-        self.__current_sampler = ""
-        self.__current_steps = 10
         self.initUI()
 
     def initUI(self): 
@@ -58,106 +55,151 @@ class MyWindow(QMainWindow):
         HLayout = QHBoxLayout()
         mainWindow.setLayout(HLayout)
 
+        #upload cosmetic line
+        self.upload_line = QFrame(self)
+        self.upload_line.setGeometry(20, 30, 360, 10)
+        self.upload_line.setStyleSheet("color: rgba(56, 189, 248, 1);")
+        self.upload_line.setFrameShape(QFrame.HLine)
+        self.upload_line.setLineWidth(3)
+
         #upload button
         self.uploadButton = QPushButton(self)
-        self.uploadButton.setGeometry(20, 10, 175, 50)
-        self.uploadButton.setText("Upload")
+        self.uploadButton.setText("Upload Video")
+        self.uploadButton.move((int)(200 - (self.uploadButton.frameGeometry().width())/2), 20)
         self.uploadButton.clicked.connect(self.uploadClicked)
         self.uploadButton.setToolTip("Upload a video to be processed")
 
-        #config button
-        self.configButton = QPushButton(self)
-        self.configButton.setGeometry(205, 10, 175, 50)
-        self.configButton.setText("Config")
-        self.configButton.clicked.connect(self.configClicked)
-        self.configButton.setToolTip("Set or change image generation options")
+        #config 
+        self.config_box = QGroupBox("Model Configuration", self)
+        self.config_box.setGeometry(20, 70, 360, 180)
+        self.config_layout = QFormLayout(self)
+  
+        self.model_text = QLabel("Set Model:", self)
+        self.model_text.setMinimumHeight(40)
+        self.sampler_text = QLabel("Set Sampler:", self)
+        self.sampler_text.setMinimumHeight(40)
+        self.steps_text = QLabel("Select Number of Steps:", self)
+        self.steps_text.setMinimumHeight(40)
+  
+        self.models = os.listdir("../config/Models")
+        for idx, model in enumerate(self.models):
+            self.models[idx] = self.models[idx].split("/")[-1]
+        self.samplers = ['ddim (default)', 'euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'spm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'spmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'uni_pc', 'uni_pc_bh2']
+
+        self.model_combo = QComboBox(self)
+        self.model_combo.addItems(self.models)
+        self.model_combo.setMinimumHeight(40)
         
-        #prompt boxes
-        self.positive_prompt_text = QLabel(self)
-        self.positive_prompt_text.setGeometry(20, 65, 105, 50)
-        self.positive_prompt_text.setText("Positive Prompts: ")
+        self.sampler_combo = QComboBox(self)
+        self.sampler_combo.addItems(self.samplers)
+        self.sampler_combo.setMinimumHeight(40)
+        
+        self.steps_spinner = QSpinBox(self)
+        self.steps_spinner.setRange(10, 50)
+        self.steps_spinner.setSingleStep(1)
+        self.steps_spinner.setMaximumWidth(50)
+        self.steps_spinner.setMinimumHeight(40)
+        self.steps_spinner.setAlignment(Qt.AlignCenter)
+        
+        self.config_layout.addRow(self.model_text, self.model_combo)
+        self.config_layout.addRow(self.sampler_text, self.sampler_combo)
+        self.config_layout.addRow(self.steps_text, self.steps_spinner)
+
+        self.config_box.setLayout(self.config_layout)
+        
+        #prompts group
+        self.prompt_box = QGroupBox("Prompt Configuration:", self)
+        self.prompt_box.setGeometry(20, 270, 360, 180)
+        self.prompt_layout = QFormLayout(self)
+        
+        self.positive_prompt_text = QLabel("Positive Prompts: ", self)
+        self.positive_prompt_text.setMinimumHeight(40)
         self.positive_prompt = QTextEdit(self)
-        self.positive_prompt.setGeometry(135, 65, 245, 50)
-        self.negative_prompt_text = QLabel(self)
-        self.negative_prompt_text.setGeometry(20, 120, 105, 50)
-        self.negative_prompt_text.setText("Negative Prompts: ")
+        self.positive_prompt.setMinimumHeight(40)
+        self.negative_prompt_text = QLabel("Negative Prompts:", self)
+        self.negative_prompt_text.setMinimumHeight(40)
         self.negative_prompt = QTextEdit(self)
-        self.negative_prompt.setGeometry(135, 120, 245, 50)
+        self.negative_prompt.setMinimumHeight(40)
+        
+        self.prompt_layout.addRow(self.positive_prompt_text, self.positive_prompt)
+        self.prompt_layout.addRow(self.negative_prompt_text, self.negative_prompt)
+        self.prompt_box.setLayout(self.prompt_layout)
+
+        #start cosmetic line
+        self.start_line = QFrame(self)
+        self.start_line.setGeometry(20, 475, 360, 10)
+        self.start_line.setStyleSheet("color: rgba(56, 189, 248, 1);")
+        self.start_line.setFrameShape(QFrame.HLine)
+        self.start_line.setLineWidth(3)
 
         #start button
         self.startButton = QPushButton(self)
-        self.startButton.setGeometry(20, 175, 360, 50)
-        self.startButton.setText("Start")
+        self.startButton.setText("Generate Video")
+        self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 465)
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setEnabled(False)
         self.startButton.setToolTip("Initiate the conversion process")
 
+
         #split progress widgets
-        self.split_prog_icon = QLabel(self)
-        self.split_prog_icon.setGeometry(120, 255, 20, 20)
-        self.split_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
-        self.split_prog_icon.setVisible(False)
+        self.split_prog_gif = QMovie("assets\\loading.gif")
+        self.split_prog_loading = QLabel(self)
+        self.split_prog_loading.setScaledContents(True)
+        self.split_prog_loading.setGeometry(120, 515, 20, 20)
+        self.split_prog_loading.setMaximumSize(20, 20)
+        self.split_prog_loading.setMinimumSize(20, 20)
+        self.split_prog_loading.setMovie(self.split_prog_gif)
+        self.split_prog_loading.setVisible(False)
+    
+        self.split_prog_done = QLabel(self)
+        self.split_prog_done.setGeometry(120, 515, 20, 20)
+        self.split_prog_done.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
+        self.split_prog_done.setVisible(False)
         self.split_prog_text = QLabel(self)
-        self.split_prog_text.setGeometry(160, 255, 200, 20)
+        self.split_prog_text.setGeometry(160, 515, 200, 20)
         self.split_prog_text.setText("Splitting frames...")
         self.split_prog_text.setVisible(False)
         
         #imggen progress widgets
-        self.gen_prog_icon = QLabel(self)
-        self.gen_prog_icon.setGeometry(120, 310, 20, 20)
-        self.gen_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
-        self.gen_prog_icon.setVisible(False)
+        self.gen_prog_gif = QMovie("assets\\loading.gif")
+        self.gen_prog_loading = QLabel(self)
+        self.gen_prog_loading.setScaledContents(True)
+        self.gen_prog_loading.setGeometry(120, 515, 20, 20)
+        self.gen_prog_loading.setMaximumSize(20, 20)
+        self.gen_prog_loading.setMinimumSize(20, 20)
+        self.gen_prog_loading.setMovie(self.gen_prog_gif)
+        self.gen_prog_loading.setVisible(False)
+        
+        self.gen_prog_done = QLabel(self)
+        self.gen_prog_done.setGeometry(120, 570, 20, 20)
+        self.gen_prog_done.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
+        self.gen_prog_done.setVisible(False)
         self.gen_prog_text = QLabel(self)
-        self.gen_prog_text.setGeometry(160, 310, 200, 20)
+        self.gen_prog_text.setGeometry(160, 570, 200, 20)
         self.gen_prog_text.setText("Generating frames...")
         self.gen_prog_text.setVisible(False)
         
         #stitch progress widgets
-        self.stitch_prog_icon = QLabel(self)
-        self.stitch_prog_icon.setGeometry(120, 365, 20, 20)
-        self.stitch_prog_icon.setPixmap(QPixmap("assets\\loading.png").scaled(20,20))
-        self.stitch_prog_icon.setVisible(False)
+        self.stitch_prog_gif = QMovie("assets\\loading.gif")
+        self.stitch_prog_loading = QLabel(self)
+        self.stitch_prog_loading.setScaledContents(True)
+        self.stitch_prog_loading.setGeometry(120, 515, 20, 20)
+        self.stitch_prog_loading.setMaximumSize(20, 20)
+        self.stitch_prog_loading.setMinimumSize(20, 20)
+        self.stitch_prog_loading.setMovie(self.stitch_prog_gif)
+        self.stitch_prog_loading.setVisible(False)
+        
+        self.stitch_prog_done = QLabel(self)
+        self.stitch_prog_done.setGeometry(120, 625, 20, 20)
+        self.stitch_prog_done.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
+        self.stitch_prog_done.setVisible(False)
         self.stitch_prog_text = QLabel(self)
-        self.stitch_prog_text.setGeometry(160, 365, 200, 20)
+        self.stitch_prog_text.setGeometry(160, 625, 200, 20)
         self.stitch_prog_text.setText("Stiching video back together...")
         self.stitch_prog_text.setVisible(False)
         
-        #properties
-        self.properties = QPushButton(self)
-        self.properties.setGeometry(20, 420, 360, 25)
-        self.properties.setText("Project Properties")
-        self.properties.clicked.connect(self.showProperties)
-        self.properties.setToolTip("Show project properties, including the current video and system properties")
-        
         if len(os.listdir("../generatedFrames")) > 1:
             self.recoverDetected()
-
-    def showProperties(self):
-        current_qt = version('PyQt5')
-        current_cv = cv.__version__
-        current_py = str(sys.version_info[0]) + "." + str(sys.version_info[1]) + "." + str(sys.version_info[2])
-        if self.__file == None:
-            current_project = "No project uploaded yet."
-        else:
-            current_project = self.__file
-        if self.positive_prompt.toPlainText() == "":
-            current_prompt_p = 'No positive prompts selected.'
-        else:
-            current_prompt_p = self.positive_prompt.toPlainText()
-        if self.negative_prompt.toPlainText() == "":
-            current_prompt_n = "No negative prompts selected."
-        else:
-            current_prompt_n = self.negative_prompt.toPlainText()  
-            
-            
-        properties_text = "Current Project: \n\t" + current_project + "\nCurrent Model: \n\t" + self.__current_model + "\nCurrent Sampler: \n\t" + self.__current_sampler + "\nCurrent Steps: \n\t" + str(self.__current_steps) + "\nCurrent Positive Prompts: \n\t" + current_prompt_p + "\nCurrent Negative Prompts: \n\t" + current_prompt_n
-        versions_text = "Current Python Version: " + current_py + "\nCurrent PyQt Version: " + current_qt + "\nCurrent OpenCV Version: " + current_cv
-        props = QMessageBox()
-        props.setWindowTitle("Project Properties")
-        props.setIcon(QMessageBox.Information)
-        props.setText(properties_text)
-        props.setDetailedText(versions_text)
-        props.exec_()
 
     def uploadClicked(self): 
         options = QFileDialog.Options()
@@ -179,48 +221,6 @@ class MyWindow(QMainWindow):
 
         self.startButton.setEnabled(True)
       
-    def configClicked(self):
-        config = QDialog()
-        config.setWindowTitle("Generation Config")
-        config.setGeometry(200, 200, 500, 250)
-        model_text = QLabel("Select Model: ", config)
-        model_text.setGeometry(20, 20, 235, 50)
-        sampler_text = QLabel("Select Sampler:", config)
-        sampler_text.setGeometry(20, 75, 235, 50)
-        steps_text = QLabel("Select Number of Steps: ", config)
-        steps_text.setGeometry(20, 125, 235, 50)
-        models = os.listdir("../config/Models")
-        for idx, model in enumerate(models):
-            models[idx] = models[idx].split("/")[-1]
-        samplers = ['ddim (default)', 'euler', 'euler_ancestral', 'heun', 'heunpp2', 'dpm_2', 'spm_2_ancestral', 'lms', 'dpm_fast', 'dpm_adaptive', 'spmpp_2s_ancestral', 'dpmpp_sde', 'dpmpp_sde_gpu', 'dpmpp_2m', 'dpmpp_2m_sde', 'dpmpp_2m_sde_gpu', 'dpmpp_3m_sde', 'dpmpp_3m_sde_gpu', 'ddpm', 'lcm', 'uni_pc', 'uni_pc_bh2']
-
-        model_combo = QComboBox(config)
-        model_combo.setGeometry(230, 20, 235, 50)
-        model_combo.addItems(models)
-        
-        sampler_combo = QComboBox(config)
-        sampler_combo.setGeometry(230, 75, 235, 50)
-        sampler_combo.addItems(samplers)
-        
-        steps_spinner = QSpinBox(config)
-        steps_spinner.setGeometry(230, 130, 50, 40)
-        steps_spinner.setRange(10, 50)
-        steps_spinner.setSingleStep(1)
-        
-        save_config = QPushButton("Save", config)
-        save_config.setGeometry(200, 180, 50, 50)
-        save_config.clicked.connect(lambda: self.saveConfig(model_combo.currentText(), sampler_combo.currentText(), steps_spinner.value()))
-        
-        config.exec_()
-      
-    def saveConfig(self, model, sampler, steps):
-         self.__current_model = model
-         if sampler == 'ddim (default)':
-             self.__current_sampler = 'ddim'
-         else:
-            self.__current_sampler = sampler
-         self.__current_steps = steps
-      
     def startClicked(self):
         if self.positive_prompt.toPlainText() == "":
             errdlg1 = QMessageBox()
@@ -230,7 +230,7 @@ class MyWindow(QMainWindow):
             errdlg1.exec_()
             return
         
-        if self.__current_model == None or self.__current_sampler == None:
+        if self.model_combo.currentText() == "" or self.sampler_combo.currentText() == "":
             errdlg = QMessageBox()
             errdlg.setWindowTitle("Error - Configuration not set!")
             errdlg.setIcon(QMessageBox.Critical)
@@ -245,7 +245,8 @@ class MyWindow(QMainWindow):
             self.start_thread.start()
                 
     def splitFrames(self):
-        self.split_prog_icon.setVisible(True)
+        self.split_prog_loading.setVisible(True)
+        self.split_prog_gif.start()
         self.split_prog_text.setVisible(True)
         video_splitter.split(self.__file)
         self.splitFinished()
@@ -253,12 +254,15 @@ class MyWindow(QMainWindow):
         self.stitchVideo()
     
     def splitFinished(self):
-        self.split_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
+        self.split_prog_gif.stop()
+        self.split_prog_loading.setVisible(False)
+        self.split_prog_done.setVisible(True)
         self.split_prog_text.setText("Finished Splitting Frames!")
         self.split_prog_text.setStyleSheet("color: green")
     
     def generateFrames(self):
-        self.gen_prog_icon.setVisible(True)
+        self.gen_prog_loading.setVisible(True)
+        self.gen_prog_gif.start()
         self.gen_prog_text.setVisible(True)
         if self.positive_prompt.toPlainText() == "":
             prompt_p = ""
@@ -268,92 +272,39 @@ class MyWindow(QMainWindow):
             prompt_n = ""
         else:
             prompt_n = self.negative_prompt.toPlainText()
-        img_gen.ai_generate(prompt_p, prompt_n, self.__current_model, self.__current_sampler, self.__current_steps)
+        #img_gen.ai_generate(prompt_p, prompt_n, self.model_combo.currentText(), self.sampler_combo.currentText(), self.steps_spinner.value())
         self.genFinished()
     
     def genFinished(self):
-        self.gen_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
+        self.split_prog_gif.stop()
+        self.split_prog_loading.setVisible(False)
+        self.split_prog_done.setVisible(True)
         self.gen_prog_text.setText("Finished Generating Frames!")
         self.gen_prog_text.setStyleSheet("color: green")
     
     def stitchVideo(self):
-        self.stitch_prog_icon.setVisible(True)
+        self.stitch_prog_loading.setVisible(True)
+        self.stitch_prog_gif.start()
         self.stitch_prog_text.setVisible(True)
         animated_video_name = self.__file.split("/")[-1].split(".")[0]
         stitcher.stitch_frames(animated_video_name)
         self.stitchFinished()
     
     def stitchFinished(self):
-        self.stitch_prog_icon.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
+        self.stitch_prog_gif.stop()
+        self.stitch_prog_loading.setVisible(False)
+        self.stitch_prog_done.setVisible(True)
         self.stitch_prog_text.setText("Finished Stitching Video!")
         self.stitch_prog_text.setStyleSheet("color: green")
         cleanup()
-    
-    def playClicked(self):
-        print("Play button clicked!")
-        if self.__file is not None:
-            self.play_thread = QThread(self)
-            self.play_worker = Worker(self.playVideo)
-            self.play_worker.moveToThread(self.play_thread)
-            self.play_thread.started.connect(self.play_worker.run)
-            self.play_thread.start()
-            
-    def playVideo(self):
-        file_name = self.__file
-        if file_name:
-            cap = cv.VideoCapture(file_name)
-            if not cap.isOpened():
-                print("Error: Could not open video file")
-                return
-
-            frame_rate = cap.get(cv.CAP_PROP_FPS)
-            if frame_rate == 0:
-                print("Warning: Unable to determine frame rate. Using default delay.")
-                delay = 30
-            else:
-                delay = int(500 / frame_rate)
-            frame_count = 0
-            
-            self.__frame_total = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
-            self.progress_bar.setVisible(True)
-            self.progress_bar.setMaximum(self.__frame_total)
-
-            video_name = file_name.split("/")[-1]
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if ret:
-                    frame_count += 1
-                    print("Processing frame", frame_count)
-                    self.progress_bar.setValue(frame_count)
-                    
-                    frame_h, frame_w = frame.shape[:2]
-                    if 720 < frame_h or 1280 < frame_w: # resizing the video down to 720x1280 if it's larger
-                        scaling = 720 / float(frame_h)
-                        if 1280 / float(frame_w) < scaling:
-                            scaling = 1280 / float(frame_w)
-                        frame = cv.resize(frame, None, fx = scaling, fy = scaling, interpolation = cv.INTER_AREA) 
-                    
-                    window_name = 'Playing Video - ' + video_name
-                    cv.imshow(window_name, frame)
-                    if cv.waitKey(delay) == ord('q'):
-                        break
-                    if cv.getWindowProperty(window_name, cv.WND_PROP_VISIBLE) < 1: # allows for the video to be closed before finishing
-                        self.progress_bar.setVisible(False)
-                        break
-                else:
-                    break
-            cap.release()
-            cv.destroyAllWindows()
             
     def recoverDetected(self):
         self.uploadButton.setVisible(False)
-        self.configButton.setVisible(False)
         self.positive_prompt_text.setVisible(False)
         self.positive_prompt.setVisible(False)
         self.negative_prompt_text.setVisible(False)
         self.negative_prompt.setVisible(False)
         self.startButton.setVisible(False)
-        self.properties.setVisible(False)
         
         self.recover_label_1 = QLabel("An unfinished project was detected.", self)
         self.recover_label_1.setGeometry(20, 75, 360, 25)
@@ -393,13 +344,11 @@ class MyWindow(QMainWindow):
         self.recover_thumbnail.setVisible(False)
         
         self.uploadButton.setVisible(True)
-        self.configButton.setVisible(True)
         self.positive_prompt_text.setVisible(True)
         self.positive_prompt.setVisible(True)
         self.negative_prompt_text.setVisible(True)
         self.negative_prompt.setVisible(True)
         self.startButton.setVisible(True)
-        self.properties.setVisible(True)
     
     def confirmOverwrite(self):
         self.recover_label_1.setText("This will permanently delete the previous project.")
@@ -431,13 +380,11 @@ class MyWindow(QMainWindow):
         self.recover_thumbnail.setVisible(False)
         
         self.uploadButton.setVisible(True)
-        self.configButton.setVisible(True)
         self.positive_prompt_text.setVisible(True)
         self.positive_prompt.setVisible(True)
         self.negative_prompt_text.setVisible(True)
         self.negative_prompt.setVisible(True)
         self.startButton.setVisible(True)
-        self.properties.setVisible(True)
             
     
 class Worker(QObject):
