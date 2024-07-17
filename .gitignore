@@ -5,3 +5,4 @@ generatedFrames/*.jpg
 generatedFrames/*.png
 app/__pycache__/*
 {\rtf1}
+tests/__pycache__/*
