@@ -40,7 +40,9 @@ QGroupBox {
 /* Input field styles */
 QTextEdit,
 QComboBox,
-QSpinBox {
+QAbstractItemView,
+QSpinBox,
+QDoubleSpinBox {
     border: 1px solid rgba(255, 255, 255, 1);
     color: rgba(56, 189, 248, 1);
 }
