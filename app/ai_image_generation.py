@@ -1,257 +1,128 @@
-import os
-import websocket
-import uuid
-import json
+from datetime import datetime
 import urllib.request
-import urllib.parse
-from re import split
-from shutil import copy
-from shutil import move
+import base64
+import json
+import time
+import os
+import cv2 
+from PIL import Image
 
-server_address = "127.0.0.1:8188"
-client_id = str(uuid.uuid4())
+webui_server_url = 'http://127.0.0.1:7860'
 
-##
-# Function to generate images
-# enteredPrompt:            A prompt used to style each image
-# enteredNegativePrompt     A prompt used to excluded certain data from each image
-##
+out_dir = '../'
+out_dir_i2i = os.path.join(out_dir, 'generatedFrames')
+os.makedirs(out_dir_i2i, exist_ok=True)
+inputDir = "C:\\VideoToAnime\\originalFrames\\"
+mergedDir = "merged"
+os.makedirs(mergedDir, exist_ok=True)
 
-def ai_generate(enteredPrompt, enteredNegativePrompt, modelName, sampler, steps):
-    #Split frames to use as input
-    inputDir = "C:\\VideoToAnime\\originalFrames\\"
-    comfyInputDir = "C:\\ComfyUI_windows_portable\\ComfyUI\\input\\"
-    
-    #Generated frames using Stable Diffusion
-    comfyOutputDir = "C:\\ComfyUI_windows_portable\\ComfyUI\\output\\"
-    outputDir = "C:\\VideoToAnime\\generatedFrames\\"
-    
-    #Stable Diffusion Settings
-    #modelName = "drippyWatercolor_jwlWatercolorDrippy.ckpt"
-    # Samplers: dpmpp_sde, ddim
-    #sampler = "ddim"
-    #steps = 10
-    
-    print("Copying Input to Comfy Input")
-    #Copying split frames to ComfyUI input directory
-    for frame in os.listdir(inputDir):
-        if os.path.isfile(os.path.join(inputDir, frame)) and ( frame.endswith(".png") or frame.endswith(".jpg") ):
-            copy(inputDir+frame, comfyInputDir+frame)
 
-    #Creating a websocket to connect to the ComfyUI API
-    ws = websocket.WebSocket()
-    ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
+def timestamp():
+    return datetime.fromtimestamp(time.time()).strftime("%Y%m%d-%H%M%S")
+
+
+def encode_file_to_base64(path):
+    with open(path, 'rb') as file:
+        return base64.b64encode(file.read()).decode('utf-8')
+
+
+def decode_and_save_base64(base64_str, save_path):
+    with open(save_path, "wb") as file:
+        file.write(base64.b64decode(base64_str))
+
+
+def call_api(api_endpoint, **payload):
+    data = json.dumps(payload).encode('utf-8')
+    request = urllib.request.Request(
+        f'{webui_server_url}/{api_endpoint}',
+        headers={'Content-Type': 'application/json'},
+        data=data,
+    )
+    response = urllib.request.urlopen(request)
+    return json.loads(response.read().decode('utf-8'))
+
+
+def call_img2img_api(savePath, **payload):
+    response = call_api('sdapi/v1/img2img', **payload)
+    for index, image in enumerate(response.get('images')):
+        decode_and_save_base64(image, savePath)
+        
+def create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, model_name, sampler):
+    batch_size = 1
     
-    #Keeps track of which frame is being processed
+    tempImg = Image.open(imagePath)
+    
+    height = tempImg.height
+    height = height/descale
+    width = tempImg.width
+    width = width/descale
+    
+    init_images = [
+        encode_file_to_base64(imagePath)
+    ]
+    
+    payload = {
+        "prompt": positive,
+        "negative_prompt": negative,
+        "seed": 1,
+        "steps": steps,
+        "cfg_scale": cfg,
+        "sampler_name": sampler,# "Euler a",
+        "width": width,
+        "height": height,
+        "denoising_strength": denoise,
+        "n_iter": 1,
+        "init_images": init_images,
+        "batch_size": batch_size if len(init_images) == 1 else len(init_images),
+        "override_settings": {
+             'sd_model_checkpoint': model_name,#"toonyou_beta3",  # this can use to switch sd model
+        },
+        # "mask": encode_file_to_base64(r"B:\path\to\mask.png")
+    }
+    
+    return payload
+    
+def image_merge(previousImage, currentImage, frame):
+    image1 = cv2.imread(previousImage) 
+    image2 = cv2.imread(currentImage) 
+
+    image3 = image1 * 0.3 + image2 * 0.7
+    
+    outputDirectory = os.path.join(mergedDir, frame)
+    cv2.imwrite(outputDirectory, image3)
+
+def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale):
     counter = 0
-    previousFrame = ""
-
-    #Every Frame in the ComfyUI input directory is generated
-    for frame in sorted([f for f in os.listdir(comfyInputDir) if f.endswith('.png') or f.endswith('.jpg')], key=lambda x: int(x[5:-4])):
+    previousImage = ""
+    for frame in sorted([f for f in os.listdir(inputDir) if f.endswith('.png') or f.endswith('.jpg')], key=lambda x: int(x[5:-4])):
+        imagePath = os.path.join(inputDir, frame)
+    
         if(counter == 0):
-            previousFrame = frame
+            previousImage = imagePath
             counter = 1
-        
-        #Prints the current frame being generated
-        print("Current Frame: "+frame+" Last Frame: "+previousFrame)
-    
-        # JSON used to set comfyui to generate
-        prompt_text = {
-            "3": {
-                "inputs": {
-                    "seed": 6,
-                    "steps": steps,
-                    "cfg": 8,
-                    "sampler_name": sampler,
-                    "scheduler": "normal",
-                    "denoise": 0.30,
-                    "model": [
-                        "4",
-                        0
-                    ],
-                    "positive": [
-                        "6",
-                        0
-                    ],
-                    "negative": [
-                        "7",
-                        0
-                    ],
-                    "latent_image": [
-                        "11",
-                        0
-                    ]
-                },
-                "class_type": "KSampler",
-                "_meta": {
-                    "title": "KSampler"
-                }
-            },
-            "4": {
-                "inputs": {
-                    "ckpt_name": modelName
-                },
-                "class_type": "CheckpointLoaderSimple",
-                "_meta": {
-                    "title": "Load Checkpoint"
-                }
-            },
-            "6": {
-                "inputs": {
-                    "text": enteredPrompt,
-                    "clip": [
-                        "4",
-                        1
-                    ]
-                },
-                "class_type": "CLIPTextEncode",
-                "_meta": {
-                    "title": "CLIP Text Encode (Prompt)"
-                }
-            },
-            "7": {
-                "inputs": {
-                    "text": enteredNegativePrompt,
-                    "clip": [
-                        "4",
-                        1
-                    ]
-                },
-                "class_type": "CLIPTextEncode",
-                "_meta": {
-                    "title": "CLIP Text Encode (Prompt)"
-                }
-            },
-            "8": {
-                "inputs": {
-                    "samples": [
-                        "3",
-                        0
-                    ],
-                    "vae": [
-                        "4",
-                        2
-                    ]
-                },
-                "class_type": "VAEDecode",
-                "_meta": {
-                    "title": "VAE Decode"
-                }
-            },
-            "9": {
-                "inputs": {
-                    "filename_prefix": frame,
-                    "images": [
-                        "8",
-                        0
-                    ]
-                },
-                "class_type": "SaveImage",
-                "_meta": {
-                    "title": "Save Image"
-                }
-            },
-            "10": {
-                "inputs": {
-                    "image": frame,
-                    "upload": "image"
-                },
-                "class_type": "LoadImage",
-                "_meta": {
-                    "title": "Load Image"
-                }
-            },
-            "11": {
-                "inputs": {
-                    "pixels": [
-                        "13",
-                        0
-                    ],
-                    "vae": [
-                        "4",
-                        2
-                    ]
-                },
-                "class_type": "VAEEncode",
-                "_meta": {
-                    "title": "VAE Encode"
-                }
-            },
-            "12": {
-                "inputs": {
-                    "image": previousFrame,
-                    "upload": "image"
-                },
-                "class_type": "LoadImage",
-                "_meta": {
-                    "title": "Load Image"
-                }
-            },
-            "13": {
-                "inputs": {
-                    "blend_factor": 0.3,
-                    "blend_mode": "normal",
-                    "image1": [
-                        "10",
-                        0
-                    ],
-                    "image2": [
-                        "12",
-                        0
-                    ]
-                },
-                "class_type": "ImageBlend",
-                "_meta": {
-                    "title": "ImageBlend"
-                }
-            }
-        }
-        
-        #Keeps track of previous frame for blending
-        previousFrame = frame
-
-        #Converts dict to json
-        prompt_json = json.dumps(prompt_text)
-        prompt = json.loads(prompt_json)
-        
-        #Generate
-        images = get_images(ws, prompt)
-    
-    #Once all images are finished it copies them over
-    for frame in os.listdir(comfyOutputDir):
-        if os.path.isfile(os.path.join(comfyOutputDir, frame)) and frame.endswith(".png"):
-            currentFrame = split('[.]', frame)[0]+".png"
-            print("Copying "+frame+" to target directory as "+currentFrame)
-            copy(comfyOutputDir+frame, outputDir+currentFrame)
             
+        image_merge(previousImage, imagePath, frame)
+        
+        previousImage = imagePath
 
-#Used to set prompt with api call
-def queue_prompt(prompt):
-    p = {"prompt": prompt, "client_id": client_id}
-    data = json.dumps(p).encode('utf-8')
-    req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data)
-    return json.loads(urllib.request.urlopen(req).read())
+    #Every Frame sorted
+    for frame in sorted([f for f in os.listdir(mergedDir) if f.endswith('.png') or f.endswith('.jpg')], key=lambda x: int(x[5:-4])):
+        imagePath = os.path.join(mergedDir, frame)
+        payload = create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, model_name, sampler)
+        savePath = "../generatedFrames/"+frame
+        call_img2img_api(savePath, **payload)
 
-#Used to start image generation
-def get_images(ws, prompt):
-    prompt_id = queue_prompt(prompt)['prompt_id']
-    output_images = {}
-    current_node = ""
-    while True:
-        out = ws.recv()
-        if isinstance(out, str):
-            message = json.loads(out)
-            if message['type'] == 'executing':
-                data = message['data']
-                if data['prompt_id'] == prompt_id:
-                    if data['node'] is None:
-                        break #Execution is done
-                    else:
-                        current_node = data['node']
-        else:
-            if current_node == 'save_image_websocket_node':
-                images_output = output_images.get(current_node, [])
-                images_output.append(out[8:])
-                output_images[current_node] = images_output
-
-    return output_images
+if __name__ == '__main__':
+    positive = "(best quality, masterpiece), a white man in a t-shirt and shorts, brown short hair, brown beard"
+    negative = "(worst quality, low quality, letterboxed)"
+    steps = 15
+    cfg = 8
+    sampler = "Euler a"
+    width = 1920
+    height = 1080
+    denoise = 0.40
+    descale = 2
+    
+    
+    generate_images(positive, negative, steps, cfg, denoise, descale)
+    
