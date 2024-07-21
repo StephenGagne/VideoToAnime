@@ -8,11 +8,13 @@ Date: 2024-07-16
 '''
 Current known issues:
 - *Some* widget geometry is hard-coded, should be programmatically determined?
+- Potential geometry issues on very small and very large displays
 '''
 '''
 Future Plans:
 - Finish implementing v2 UI (e.g. recover untested in v2 as of 2024-07-16)
 - Add tooltips/detailed instructions to new UI additions (particularily lingo-intensive areas like config)
+- Add preset style themes (light mode, dark mode?)
 '''
 
 import sys
@@ -184,9 +186,9 @@ class MyWindow(QMainWindow):
         self.split_prog_gif = QMovie("assets\\loading.gif")
         self.split_prog_loading = QLabel(self)
         self.split_prog_loading.setScaledContents(True)
-        self.split_prog_loading.setGeometry(120, 660, 20, 20)
-        self.split_prog_loading.setMaximumSize(20, 20)
-        self.split_prog_loading.setMinimumSize(20, 20)
+        self.split_prog_loading.setGeometry(115, 655, 30, 30)
+        self.split_prog_loading.setMaximumSize(30, 30)
+        self.split_prog_loading.setMinimumSize(30, 30)
         self.split_prog_loading.setMovie(self.split_prog_gif)
         self.split_prog_loading.setVisible(False)
     
@@ -203,9 +205,9 @@ class MyWindow(QMainWindow):
         self.gen_prog_gif = QMovie("assets\\loading.gif")
         self.gen_prog_loading = QLabel(self)
         self.gen_prog_loading.setScaledContents(True)
-        self.gen_prog_loading.setGeometry(120, 715, 20, 20)
-        self.gen_prog_loading.setMaximumSize(20, 20)
-        self.gen_prog_loading.setMinimumSize(20, 20)
+        self.gen_prog_loading.setGeometry(115, 710, 30, 30)
+        self.gen_prog_loading.setMaximumSize(30, 30)
+        self.gen_prog_loading.setMinimumSize(30, 30)
         self.gen_prog_loading.setMovie(self.gen_prog_gif)
         self.gen_prog_loading.setVisible(False)
         
@@ -222,9 +224,9 @@ class MyWindow(QMainWindow):
         self.stitch_prog_gif = QMovie("assets\\loading.gif")
         self.stitch_prog_loading = QLabel(self)
         self.stitch_prog_loading.setScaledContents(True)
-        self.stitch_prog_loading.setGeometry(120, 770, 20, 20)
-        self.stitch_prog_loading.setMaximumSize(20, 20)
-        self.stitch_prog_loading.setMinimumSize(20, 20)
+        self.stitch_prog_loading.setGeometry(110, 765, 30, 30)
+        self.stitch_prog_loading.setMaximumSize(30, 30)
+        self.stitch_prog_loading.setMinimumSize(30, 30)
         self.stitch_prog_loading.setMovie(self.stitch_prog_gif)
         self.stitch_prog_loading.setVisible(False)
         
@@ -312,7 +314,7 @@ class MyWindow(QMainWindow):
         else:
             prompt_n = self.negative_prompt.toPlainText() 
             
-        img_gen.ai_generate(prompt_p, prompt_n, self.model_combo.currentText(), self.sampler_combo.currentText(), self.steps_spinner.value())
+        img_gen.generate_images(prompt_p, prompt_n, self.model_combo.currentText(), self.sampler_combo.currentText(), self.steps_spinner.value(), self.cfg_spinner.value(), self.denoise_spinner.value(), self.descale_spinner.value())
         self.genFinished()
     
     def genFinished(self):
