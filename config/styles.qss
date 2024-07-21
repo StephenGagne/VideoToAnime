@@ -5,32 +5,46 @@
 
 /* Base styles for widgets */
 QWidget {
-    background-color: #bfe1ed;
+    background-color: rgba(30,41,59, 1);
 }
 
 /* Button styles */
 QPushButton {
-    background-color: rgba(255, 255, 255, 0.899);
-    color: black;
-    border-radius: 12px;
+    background-color: rgba(30, 41, 59, 1);
+    color: rgba(56, 189, 248, 1);
+    border: 2px solid rgba(56, 189, 248, 1);
 }
 
-QPushButton:disabled {
-    background-color: rgba(245, 245, 245, 0.5);
-    color: grey;
+QPushButton:hover {
+    background-color: rgba(56, 189, 248, 0.9);
+    color: #1e293b;
 }
+
+/* Temporarily Omitted
+QPushButton:disabled {
+    background-color: rgba(245, 245, 245, 0.2);
+}
+*/
 
 /* Text styles */
 QLabel,
-QTextEdit {
-    color: black;
+QTextEdit{
+    color: rgba(56, 189, 248, 1);
+}
+
+QGroupBox {
+    color: rgba(56, 189, 248, 1);
+    font-weight: 900;
 }
 
 /* Input field styles */
 QTextEdit,
 QComboBox,
-QSpinBox {
-    background-color: rgba(245, 245, 245, 1);
+QAbstractItemView,
+QSpinBox,
+QDoubleSpinBox {
+    border: 1px solid rgba(255, 255, 255, 1);
+    color: rgba(56, 189, 248, 1);
 }
 
 /* Progress bar styles */
