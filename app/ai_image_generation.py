@@ -7,7 +7,7 @@ import os
 import cv2 
 from PIL import Image
 
-webui_server_url = 'http://127.0.0.1:7860'
+webui_server_url = 'http://localhost:7860'
 
 out_dir = '../'
 out_dir_i2i = os.path.join(out_dir, 'generatedFrames')
@@ -67,7 +67,7 @@ def create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, 
         "seed": 1,
         "steps": steps,
         "cfg_scale": cfg,
-        "sampler_name": sampler,# "Euler a",
+        "sampler_name": sampler,
         "width": width,
         "height": height,
         "denoising_strength": denoise,
@@ -75,9 +75,8 @@ def create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, 
         "init_images": init_images,
         "batch_size": batch_size if len(init_images) == 1 else len(init_images),
         "override_settings": {
-             'sd_model_checkpoint': model_name,#"toonyou_beta3",  # this can use to switch sd model
+             'sd_model_checkpoint': model_name,
         },
-        # "mask": encode_file_to_base64(r"B:\path\to\mask.png")
     }
     
     return payload
