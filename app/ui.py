@@ -91,7 +91,7 @@ class MyWindow(QMainWindow):
         self.models = os.listdir("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
-        self.samplers = ["Eular a", "Eular", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
+        self.samplers = ["Euler a", "Euler", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
 
         self.model_combo = QComboBox(self)
         self.model_combo.addItems(self.models)
@@ -314,7 +314,13 @@ class MyWindow(QMainWindow):
         else:
             prompt_n = self.negative_prompt.toPlainText() 
             
-        img_gen.generate_images(prompt_p, prompt_n, self.model_combo.currentText(), self.sampler_combo.currentText(), self.steps_spinner.value(), self.cfg_spinner.value(), self.denoise_spinner.value(), self.descale_spinner.value())
+        modelName = self.model_combo.currentText()
+        sampler = self.sampler_combo.currentText()
+        steps = self.steps_spinner.value()
+        cfg = self.cfg_spinner.value()
+        denoise = self.denoise_spinner.value()
+        descale = self.descale_spinner.value()
+        img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
         self.genFinished()
     
     def genFinished(self):
@@ -404,16 +410,7 @@ class MyWindow(QMainWindow):
         self.recover_no.clicked.connect(self.recoverDetected)
         
     def overwriteProject(self):
-        folder = os.listdir("../generatedFrames")
-        for file in folder:
-            path = os.path.join("../generatedFrames/", file)
-            if os.path.isfile(path) and path.endswith(".png"):
-                os.remove(path)
-        folder = os.listdir("../originalFrames")
-        for file in folder:
-            path = os.path.join("../originalFrames/", file)
-            if os.path.isfile(path) and path.endswith(".png"):
-                os.remove(path)
+        cleanup()
 
         self.recover_label_1.setVisible(False)
         self.recover_label_2.setVisible(False)
