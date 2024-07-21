@@ -96,7 +96,7 @@ class MyWindow(QMainWindow):
         self.model_combo = QComboBox(self)
         self.model_combo.addItems(self.models)
         for i in range(0,len(self.models)-1):
-            tooltip = self.models_combo.itemText(i)
+            tooltip = self.model_combo.itemText(i)
             self.model_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
         self.model_combo.setMinimumHeight(40)
         
