@@ -133,8 +133,8 @@ class MyWindow(QMainWindow):
         self.denoise_spinner.setAlignment(Qt.AlignCenter)
         
         self.descale_spinner = QDoubleSpinBox(self)
-        self.descale_spinner.setRange(1, 9)
-        self.descale_spinner.setSingleStep(0.5)
+        self.descale_spinner.setRange(0, 1)
+        self.descale_spinner.setSingleStep(0.05)
         self.descale_spinner.setValue(1)
         self.descale_spinner.setMaximumWidth(50)
         self.descale_spinner.setMinimumHeight(40)
