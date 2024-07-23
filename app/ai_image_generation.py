@@ -53,9 +53,9 @@ def create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, 
     tempImg = Image.open(imagePath)
     
     height = tempImg.height
-    height = height/descale
+    height = height*descale
     width = tempImg.width
-    width = width/descale
+    width = width*descale
     
     init_images = [
         encode_file_to_base64(imagePath)
