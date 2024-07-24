@@ -12,8 +12,6 @@ Current known issues:
 '''
 '''
 Future Plans:
-- Finish implementing v2 UI (e.g. recover untested in v2 as of 2024-07-16)
-- Add tooltips/detailed instructions to new UI additions (particularily lingo-intensive areas like config)
 - Add preset style themes (light mode, dark mode?)
 '''
 
@@ -23,7 +21,7 @@ from pathlib import Path
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox, QDoubleSpinBox
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QPixmap, QMovie
+from PyQt5.QtGui import QPixmap, QMovie, QIcon
 import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
@@ -36,7 +34,8 @@ class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
         self.setGeometry(100, 100, 400, 810)  #set size and position of window
-        self.setWindowTitle("Project - Group 8")
+        self.setWindowTitle("AnimateXpress")
+        self.setWindowIcon(QIcon("assets/AnimateXpress.png"))
         self.setFixedSize(400, 810)  # Prevent resizing
         self.__file = None
         self.__frame_total = 0
@@ -88,10 +87,10 @@ class MyWindow(QMainWindow):
         self.descale_text = QLabel("Select Descale Value:", self)
         self.descale_text.setMinimumHeight(40)
   
-        self.models = os.listdir("C:\AI_SD\webui\models\Stable-diffusion")
+        self.models = os.listdir("..\config\Models")##("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
-        self.samplers = ["Euler a", "Euler", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
+        self.samplers = ["Eular a", "Eular", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
 
         self.model_combo = QComboBox(self)
         self.model_combo.addItems(self.models)
@@ -115,6 +114,7 @@ class MyWindow(QMainWindow):
         self.steps_spinner.setMaximumWidth(50)
         self.steps_spinner.setMinimumHeight(40)
         self.steps_spinner.setAlignment(Qt.AlignCenter)
+        self.steps_spinner.setToolTip("How many samples the sampler will take per frame.")
         
         self.cfg_spinner = QDoubleSpinBox(self)
         self.cfg_spinner.setRange(1, 20)
@@ -123,6 +123,7 @@ class MyWindow(QMainWindow):
         self.cfg_spinner.setMaximumWidth(50)
         self.cfg_spinner.setMinimumHeight(40)
         self.cfg_spinner.setAlignment(Qt.AlignCenter)
+        self.cfg_spinner.setToolTip("How creative the AI is permitted to be.\nThe higher the value, the stricter the AI will be per the prompt text.\nFor best results use between 7 and 12.")
         
         self.denoise_spinner = QDoubleSpinBox(self)
         self.denoise_spinner.setRange(0, 1)
@@ -131,14 +132,16 @@ class MyWindow(QMainWindow):
         self.denoise_spinner.setMaximumWidth(50)
         self.denoise_spinner.setMinimumHeight(40)
         self.denoise_spinner.setAlignment(Qt.AlignCenter)
+        self.denoise_spinner.setToolTip("How close each generated frame will be to the original frame.\nThe higher the value, the more details lost.\nFor best results, use a lower value.")
         
         self.descale_spinner = QDoubleSpinBox(self)
-        self.descale_spinner.setRange(0, 1)
-        self.descale_spinner.setSingleStep(0.05)
+        self.descale_spinner.setRange(1, 9)
+        self.descale_spinner.setSingleStep(0.5)
         self.descale_spinner.setValue(1)
         self.descale_spinner.setMaximumWidth(50)
         self.descale_spinner.setMinimumHeight(40)
         self.descale_spinner.setAlignment(Qt.AlignCenter)
+        self.descale_spinner.setToolTip("The scale of the generated frames.")
         
         self.config_layout.addRow(self.model_text, self.model_combo)
         self.config_layout.addRow(self.sampler_text, self.sampler_combo)
@@ -348,41 +351,41 @@ class MyWindow(QMainWindow):
             
     def recoverDetected(self):
         self.uploadButton.setVisible(False)
-        self.positive_prompt_text.setVisible(False)
-        self.positive_prompt.setVisible(False)
-        self.negative_prompt_text.setVisible(False)
-        self.negative_prompt.setVisible(False)
+        self.upload_line.setVisible(False)
+        self.config_box.setVisible(False)
+        self.prompt_box.setVisible(False)
         self.startButton.setVisible(False)
+        self.start_line.setVisible(False)
         
         self.recover_label_1 = QLabel("An unfinished project was detected.", self)
-        self.recover_label_1.setGeometry(20, 75, 360, 25)
+        self.recover_label_1.setGeometry(20, 300, 360, 25)
         self.recover_label_1.setAlignment(Qt.AlignCenter)
         self.recover_label_1.setStyleSheet("color: red;")
         
         self.recover_label_2 = QLabel("Do you want to recover progress?", self)
-        self.recover_label_2.setGeometry(20, 105, 360, 25)
+        self.recover_label_2.setGeometry(20, 330, 360, 25)
         self.recover_label_2.setAlignment(Qt.AlignCenter)
         self.recover_label_2.setStyleSheet("font-weight: bold;")
 
         self.recover_yes = QPushButton(self)
         self.recover_yes.setText("Yes, Recover Project")
-        self.recover_yes.setGeometry(20, 140, 175, 50)
+        self.recover_yes.setGeometry(20, 370, 175, 50)
         self.recover_yes.clicked.connect(self.recoverProject)
     
         self.recover_no = QPushButton(self)
         self.recover_no.setText("No, Overwrite Project")
-        self.recover_no.setGeometry(205, 140, 175, 50)
+        self.recover_no.setGeometry(205, 370, 175, 50)
         self.recover_no.clicked.connect(self.confirmOverwrite)
         
         self.recover_thumbnail = QLabel(self)
-        self.recover_thumbnail.setGeometry(104, 210, 200, 200)
+        self.recover_thumbnail.setGeometry(104, 460, 200, 200)
         self.recover_thumbnail.setAlignment(Qt.AlignCenter)
         self.recover_thumbnail.setPixmap(QPixmap("../generatedFrames/frame0.png").scaled(208,117))
         
     
     def recoverProject(self):
         recovered_frames = os.listdir("../generatedFrames")
-        self.__recover_frame = len(recovered_frames) - 1 # subtract README
+        self.__recover_frame = len(recovered_frames) # subtract README
         print(self.__recover_frame)
         
         self.recover_label_1.setVisible(False)
@@ -392,11 +395,11 @@ class MyWindow(QMainWindow):
         self.recover_thumbnail.setVisible(False)
         
         self.uploadButton.setVisible(True)
-        self.positive_prompt_text.setVisible(True)
-        self.positive_prompt.setVisible(True)
-        self.negative_prompt_text.setVisible(True)
-        self.negative_prompt.setVisible(True)
+        self.upload_line.setVisible(True)
+        self.config_box.setVisible(True)
+        self.prompt_box.setVisible(True)
         self.startButton.setVisible(True)
+        self.start_line.setVisible(True)
     
     def confirmOverwrite(self):
         self.recover_label_1.setText("This will permanently delete the previous project.")
@@ -407,23 +410,11 @@ class MyWindow(QMainWindow):
         self.recover_yes.clicked.connect(self.overwriteProject)
         
         self.recover_no.setText("No")
-        self.recover_no.clicked.connect(self.recoverDetected)
+        self.recover_no.clicked.connect(self.initUI)
         
     def overwriteProject(self):
         cleanup()
-
-        self.recover_label_1.setVisible(False)
-        self.recover_label_2.setVisible(False)
-        self.recover_yes.setVisible(False)
-        self.recover_no.setVisible(False)
-        self.recover_thumbnail.setVisible(False)
-        
-        self.uploadButton.setVisible(True)
-        self.positive_prompt_text.setVisible(True)
-        self.positive_prompt.setVisible(True)
-        self.negative_prompt_text.setVisible(True)
-        self.negative_prompt.setVisible(True)
-        self.startButton.setVisible(True)
+        os.execl(sys.executable, *sys.orig_argv)
             
     
 class Worker(QObject):
