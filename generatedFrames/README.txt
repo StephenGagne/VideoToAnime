@@ -1,0 +1,1 @@
+Used to store AI generated images
