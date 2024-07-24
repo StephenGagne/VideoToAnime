@@ -18,7 +18,7 @@ Future Plans:
 import sys
 import time
 from pathlib import Path
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox, QDoubleSpinBox
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox, QDoubleSpinBox, QCheckBox
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QMovie, QIcon
@@ -26,17 +26,17 @@ import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
 import video_splitter
-import ai_image_generation as img_gen
+#import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 from cleanup import cleanup
 
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
-        self.setGeometry(100, 100, 400, 810)  #set size and position of window
+        self.setGeometry(100, 100, 400, 860)  #set size and position of window
         self.setWindowTitle("AnimateXpress")
         self.setWindowIcon(QIcon("assets/AnimateXpress.png"))
-        self.setFixedSize(400, 810)  # Prevent resizing
+        self.setFixedSize(400, 860)  # Prevent resizing
         self.__file = None
         self.__frame_total = 0
         self.__recover_frame = 1
@@ -71,7 +71,7 @@ class MyWindow(QMainWindow):
 
         #config 
         self.config_box = QGroupBox("Model Configuration", self)
-        self.config_box.setGeometry(20, 70, 360, 325)
+        self.config_box.setGeometry(20, 70, 360, 375)
         self.config_layout = QFormLayout(self)
   
         self.model_text = QLabel("Set Model:", self)
@@ -104,7 +104,6 @@ class MyWindow(QMainWindow):
         for i in range(0,len(self.samplers)-1):
             tooltip = self.sampler_combo.itemText(i)
             self.sampler_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
-        
         self.sampler_combo.setMinimumHeight(40)
         
         self.steps_spinner = QSpinBox(self)
@@ -143,18 +142,33 @@ class MyWindow(QMainWindow):
         self.descale_spinner.setAlignment(Qt.AlignCenter)
         self.descale_spinner.setToolTip("The scale of the generated frames.")
         
+        self.upscale_checkbox = QCheckBox("Upscale?", self)
+        self.upscale_checkbox.setChecked(False)
+        self.upscale_checkbox.stateChanged.connect(self.upscale_checked)
+        self.upscale_checkbox.setMinimumHeight(40)
+        
+        self.resolution_combo = QComboBox(self)
+        self.resolutions = ["1080p / FHD", "1440p / QHD", "2160p / 4K UHD", "4320p / 8K UHD"]
+        self.resolution_combo.addItems(self.resolutions)
+        for i in range(0,len(self.resolutions)-1):
+            tooltip = self.resolution_combo.itemText(i)
+            self.resolution_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+        self.resolution_combo.setMinimumHeight(40)
+        self.resolution_combo.setVisible(False)
+        
         self.config_layout.addRow(self.model_text, self.model_combo)
         self.config_layout.addRow(self.sampler_text, self.sampler_combo)
         self.config_layout.addRow(self.steps_text, self.steps_spinner)
         self.config_layout.addRow(self.cfg_text, self.cfg_spinner)
         self.config_layout.addRow(self.denoise_text, self.denoise_spinner)
         self.config_layout.addRow(self.descale_text, self.descale_spinner)
+        self.config_layout.addRow(self.upscale_checkbox, self.resolution_combo)
 
         self.config_box.setLayout(self.config_layout)
         
         #prompts group
         self.prompt_box = QGroupBox("Prompt Configuration", self)
-        self.prompt_box.setGeometry(20, 415, 360, 180)
+        self.prompt_box.setGeometry(20, 465, 360, 180)
         self.prompt_layout = QFormLayout(self)
         
         self.positive_prompt_text = QLabel("Positive Prompts: ", self)
@@ -172,7 +186,7 @@ class MyWindow(QMainWindow):
 
         #start cosmetic line
         self.start_line = QFrame(self)
-        self.start_line.setGeometry(20, 620, 360, 10)
+        self.start_line.setGeometry(20, 670, 360, 10)
         self.start_line.setStyleSheet("color: rgba(56, 189, 248, 1);")
         self.start_line.setFrameShape(QFrame.HLine)
         self.start_line.setLineWidth(3)
@@ -180,7 +194,7 @@ class MyWindow(QMainWindow):
         #start button
         self.startButton = QPushButton(self)
         self.startButton.setText("Generate Video")
-        self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 610)
+        self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 660)
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setEnabled(False)
         self.startButton.setToolTip("Initiate the conversion process")
@@ -189,18 +203,18 @@ class MyWindow(QMainWindow):
         self.split_prog_gif = QMovie("assets\\loading.gif")
         self.split_prog_loading = QLabel(self)
         self.split_prog_loading.setScaledContents(True)
-        self.split_prog_loading.setGeometry(115, 655, 30, 30)
+        self.split_prog_loading.setGeometry(115, 705, 30, 30)
         self.split_prog_loading.setMaximumSize(30, 30)
         self.split_prog_loading.setMinimumSize(30, 30)
         self.split_prog_loading.setMovie(self.split_prog_gif)
         self.split_prog_loading.setVisible(False)
     
         self.split_prog_done = QLabel(self)
-        self.split_prog_done.setGeometry(120, 660, 20, 20)
+        self.split_prog_done.setGeometry(120, 710, 20, 20)
         self.split_prog_done.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.split_prog_done.setVisible(False)
         self.split_prog_text = QLabel(self)
-        self.split_prog_text.setGeometry(160, 660, 200, 20)
+        self.split_prog_text.setGeometry(160, 710, 200, 20)
         self.split_prog_text.setText("Splitting frames...")
         self.split_prog_text.setVisible(False)
         
@@ -208,18 +222,18 @@ class MyWindow(QMainWindow):
         self.gen_prog_gif = QMovie("assets\\loading.gif")
         self.gen_prog_loading = QLabel(self)
         self.gen_prog_loading.setScaledContents(True)
-        self.gen_prog_loading.setGeometry(115, 710, 30, 30)
+        self.gen_prog_loading.setGeometry(115, 760, 30, 30)
         self.gen_prog_loading.setMaximumSize(30, 30)
         self.gen_prog_loading.setMinimumSize(30, 30)
         self.gen_prog_loading.setMovie(self.gen_prog_gif)
         self.gen_prog_loading.setVisible(False)
         
         self.gen_prog_done = QLabel(self)
-        self.gen_prog_done.setGeometry(120, 715, 20, 20)
+        self.gen_prog_done.setGeometry(120, 765, 20, 20)
         self.gen_prog_done.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.gen_prog_done.setVisible(False)
         self.gen_prog_text = QLabel(self)
-        self.gen_prog_text.setGeometry(160, 715, 200, 20)
+        self.gen_prog_text.setGeometry(160, 765, 200, 20)
         self.gen_prog_text.setText("Generating frames...")
         self.gen_prog_text.setVisible(False)
         
@@ -227,23 +241,30 @@ class MyWindow(QMainWindow):
         self.stitch_prog_gif = QMovie("assets\\loading.gif")
         self.stitch_prog_loading = QLabel(self)
         self.stitch_prog_loading.setScaledContents(True)
-        self.stitch_prog_loading.setGeometry(110, 765, 30, 30)
+        self.stitch_prog_loading.setGeometry(110, 815, 30, 30)
         self.stitch_prog_loading.setMaximumSize(30, 30)
         self.stitch_prog_loading.setMinimumSize(30, 30)
         self.stitch_prog_loading.setMovie(self.stitch_prog_gif)
         self.stitch_prog_loading.setVisible(False)
         
         self.stitch_prog_done = QLabel(self)
-        self.stitch_prog_done.setGeometry(120, 770, 20, 20)
+        self.stitch_prog_done.setGeometry(120, 820, 20, 20)
         self.stitch_prog_done.setPixmap(QPixmap("assets\\check.png").scaled(20,20))
         self.stitch_prog_done.setVisible(False)
         self.stitch_prog_text = QLabel(self)
-        self.stitch_prog_text.setGeometry(160, 770, 200, 20)
+        self.stitch_prog_text.setGeometry(160, 820, 200, 20)
         self.stitch_prog_text.setText("Stiching video back together...")
         self.stitch_prog_text.setVisible(False)
         
         if len(os.listdir("../generatedFrames")) > 1:
             self.recoverDetected()
+
+    def upscale_checked(self):
+        if self.upscale_checkbox.isChecked() == True:
+            self.resolution_combo.setVisible(True)
+        else:
+            self.resolution_combo.setVisible(False)
+
 
     def uploadClicked(self): 
         options = QFileDialog.Options()
@@ -323,7 +344,7 @@ class MyWindow(QMainWindow):
         cfg = self.cfg_spinner.value()
         denoise = self.denoise_spinner.value()
         descale = self.descale_spinner.value()
-        img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
+        #img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
         self.genFinished()
     
     def genFinished(self):
