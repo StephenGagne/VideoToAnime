@@ -9,6 +9,7 @@ Date: 2024-07-16
 Current known issues:
 - *Some* widget geometry is hard-coded, should be programmatically determined?
 - Potential geometry issues on very small and very large displays
+- Widgets outside of layout boxes are a headache to adjust geometry
 '''
 '''
 Future Plans:
@@ -26,14 +27,14 @@ import cv2 as cv #import OpenCV library
 import os
 from importlib.metadata import version
 import video_splitter
-#import ai_image_generation as img_gen
+import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 from cleanup import cleanup
 
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
-        self.setGeometry(100, 100, 400, 860)  #set size and position of window
+        self.move(100, 50)  #set size and position of window
         self.setWindowTitle("AnimateXpress")
         self.setWindowIcon(QIcon("assets/AnimateXpress.png"))
         self.setFixedSize(400, 860)  # Prevent resizing
@@ -86,8 +87,11 @@ class MyWindow(QMainWindow):
         self.denoise_text.setMinimumHeight(40)
         self.descale_text = QLabel("Select Descale Value:", self)
         self.descale_text.setMinimumHeight(40)
+        self.upscale_model_text = QLabel("Select Upscale Model:", self)
+        self.upscale_model_text.setMinimumHeight(40)
+        self.upscale_model_text.setVisible(False)
   
-        self.models = os.listdir("..\config\Models")##("C:\AI_SD\webui\models\Stable-diffusion")
+        self.models = os.listdir("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
         self.samplers = ["Eular a", "Eular", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
@@ -156,6 +160,14 @@ class MyWindow(QMainWindow):
         self.resolution_combo.setMinimumHeight(40)
         self.resolution_combo.setVisible(False)
         
+        self.upscale_model = QComboBox(self)
+        self.upscale_model.addItems(self.models)
+        for i in range(0,len(self.models)-1):
+            tooltip = self.upscale_model.itemText(i)
+            self.upscale_model.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+        self.upscale_model.setMinimumHeight(40)
+        self.upscale_model.setVisible(False)
+        
         self.config_layout.addRow(self.model_text, self.model_combo)
         self.config_layout.addRow(self.sampler_text, self.sampler_combo)
         self.config_layout.addRow(self.steps_text, self.steps_spinner)
@@ -163,6 +175,7 @@ class MyWindow(QMainWindow):
         self.config_layout.addRow(self.denoise_text, self.denoise_spinner)
         self.config_layout.addRow(self.descale_text, self.descale_spinner)
         self.config_layout.addRow(self.upscale_checkbox, self.resolution_combo)
+        self.config_layout.addRow(self.upscale_model_text, self.upscale_model)
 
         self.config_box.setLayout(self.config_layout)
         
@@ -261,9 +274,42 @@ class MyWindow(QMainWindow):
 
     def upscale_checked(self):
         if self.upscale_checkbox.isChecked() == True:
+            self.setFixedSize(400, 910)
+            self.config_box.setGeometry(20, 70, 360, 425)
+            self.prompt_box.setGeometry(20, 515, 360, 180)
+            self.start_line.setGeometry(20, 720, 360, 10)
+            self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 710)
+            self.split_prog_loading.setGeometry(115, 755, 30, 30)
+            self.split_prog_done.setGeometry(120, 760, 20, 20)
+            self.split_prog_text.setGeometry(160, 760, 200, 20)
+            self.gen_prog_loading.setGeometry(115, 810, 30, 30)
+            self.gen_prog_done.setGeometry(120, 815, 20, 20)
+            self.gen_prog_text.setGeometry(160, 815, 200, 20)
+            self.stitch_prog_loading.setGeometry(110, 865, 30, 30)
+            self.stitch_prog_done.setGeometry(120, 870, 20, 20)
+            self.stitch_prog_text.setGeometry(160, 870, 200, 20)
             self.resolution_combo.setVisible(True)
+            self.upscale_model_text.setVisible(True)
+            self.upscale_model.setVisible(True)
         else:
+            self.setFixedSize(400, 860)
+            self.config_box.setGeometry(20, 70, 360, 375)
+            self.prompt_box.setGeometry(20, 465, 360, 180)
+            self.start_line.setGeometry(20, 670, 360, 10)
+            self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 660)
+            self.split_prog_loading.setGeometry(115, 705, 30, 30)
+            self.split_prog_done.setGeometry(120, 710, 20, 20)
+            self.split_prog_text.setGeometry(160, 710, 200, 20)
+            self.gen_prog_loading.setGeometry(115, 760, 30, 30)
+            self.gen_prog_done.setGeometry(120, 765, 20, 20)
+            self.gen_prog_text.setGeometry(160, 765, 200, 20)
+            self.stitch_prog_loading.setGeometry(110, 815, 30, 30)
+            self.stitch_prog_done.setGeometry(120, 820, 20, 20)
+            self.stitch_prog_text.setGeometry(160, 820, 200, 20)
             self.resolution_combo.setVisible(False)
+            self.upscale_model_text.setVisible(False)
+            self.upscale_model.setVisible(False)
+            
 
 
     def uploadClicked(self): 
@@ -344,7 +390,7 @@ class MyWindow(QMainWindow):
         cfg = self.cfg_spinner.value()
         denoise = self.denoise_spinner.value()
         descale = self.descale_spinner.value()
-        #img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
+        img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
         self.genFinished()
     
     def genFinished(self):
