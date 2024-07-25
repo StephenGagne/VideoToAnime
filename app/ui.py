@@ -138,8 +138,8 @@ class MyWindow(QMainWindow):
         self.denoise_spinner.setToolTip("How close each generated frame will be to the original frame.\nThe higher the value, the more details lost.\nFor best results, use a lower value.")
         
         self.descale_spinner = QDoubleSpinBox(self)
-        self.descale_spinner.setRange(1, 9)
-        self.descale_spinner.setSingleStep(0.5)
+        self.descale_spinner.setRange(0, 1)
+        self.descale_spinner.setSingleStep(0.05)
         self.descale_spinner.setValue(1)
         self.descale_spinner.setMaximumWidth(50)
         self.descale_spinner.setMinimumHeight(40)
@@ -390,7 +390,12 @@ class MyWindow(QMainWindow):
         cfg = self.cfg_spinner.value()
         denoise = self.denoise_spinner.value()
         descale = self.descale_spinner.value()
-        img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
+        upscale = self.upscale_checkbox.isChecked()
+        if(upscale):
+            upscale_name = self.upscale_model.currentText()
+            img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale, upscale, upscale_name)
+        else:
+            img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
         self.genFinished()
     
     def genFinished(self):

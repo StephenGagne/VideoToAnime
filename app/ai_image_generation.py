@@ -89,8 +89,30 @@ def image_merge(previousImage, currentImage, frame):
     
     outputDirectory = os.path.join(mergedDir, frame)
     cv2.imwrite(outputDirectory, image3)
+    
+def create_upscale_payload(positive, negative, imagePath, model_name, sampler):
+    init_images = [
+        encode_file_to_base64(imagePath)
+    ]
+    
+    payload = {
+        "sd_model_checkpoint":model_name,
+        "sd_vae":"",
+        "prompt":positive,
+        "negative_prompt":negative,
+        "denoising_strength": 0.20,
+        "init_images":init_images,
+        "sampler_index":sampler,
+        "steps":40,
+        "script_name": "SD upscale",
+        "script_args": ["", 64, "R-ESRGAN 4x+", 1.5],
+        "alwayson_scripts":{
+        }
+    }
+    
+    return payload
 
-def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale):
+def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, upscale=False, upscale_name="", upscale_loops=1):
     counter = 0
     previousImage = ""
     for frame in sorted([f for f in os.listdir(inputDir) if f.endswith('.png') or f.endswith('.jpg')], key=lambda x: int(x[5:-4])):
@@ -110,18 +132,26 @@ def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise
         payload = create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, model_name, sampler)
         savePath = "../generatedFrames/"+frame
         call_img2img_api(savePath, **payload)
+        if(upscale):
+            upscales = 0
+            while upscale_loops > upscales:
+                imagePath = os.path.join(out_dir_i2i, frame)
+                payload = create_upscale_payload(positive, negative, imagePath, upscale_name, sampler)
+                savePath = "../generatedFrames/"+frame
+                call_img2img_api(savePath, **payload)
+                upscales = upscales + 1
 
 if __name__ == '__main__':
-    positive = "(best quality, masterpiece), a white man in a t-shirt and shorts, brown short hair, brown beard"
+    positive = "(best quality, masterpiece), a white man, brown short hair, brown beard"
     negative = "(worst quality, low quality, letterboxed)"
+    model_name = "toonyou_beta3"
+    upscale_name = "x4-upscaler-ema"
     steps = 15
     cfg = 8
     sampler = "Euler a"
-    width = 1920
-    height = 1080
     denoise = 0.40
-    descale = 2
+    descale = 0.5
     
     
-    generate_images(positive, negative, steps, cfg, denoise, descale)
+    generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, True, upscale_name)
     
