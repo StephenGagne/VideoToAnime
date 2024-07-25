@@ -19,7 +19,7 @@ Future Plans:
 import sys
 import time
 from pathlib import Path
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox, QDoubleSpinBox, QCheckBox
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox, QDoubleSpinBox, QCheckBox, QRadioButton
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QMovie, QIcon
@@ -73,23 +73,32 @@ class MyWindow(QMainWindow):
         #config 
         self.config_box = QGroupBox("Model Configuration", self)
         self.config_box.setGeometry(20, 70, 360, 375)
-        self.config_layout = QFormLayout(self)
+        self.config_layout = QGridLayout(self)
+        self.config_layout.setOriginCorner(Qt.TopLeftCorner)
+        self.config_layout.setVerticalSpacing(25)
+        self.config_layout.setColumnStretch(0, 1)
+        self.config_layout.setColumnStretch(1, 1)
+        self.config_layout.setColumnStretch(2, 1)
+        self.config_layout.setColumnStretch(3, 1)
   
         self.model_text = QLabel("Set Model:", self)
         self.model_text.setMinimumHeight(40)
+        self.model_text.setMinimumWidth(180)
         self.sampler_text = QLabel("Set Sampler:", self)
         self.sampler_text.setMinimumHeight(40)
+        self.sampler_text.setMinimumWidth(180)
         self.steps_text = QLabel("Select Number of Steps:", self)
         self.steps_text.setMinimumHeight(40)
+        self.steps_text.setMinimumWidth(180)
         self.cfg_text = QLabel("Select CFG Value:", self)
         self.cfg_text.setMinimumHeight(40)
+        self.cfg_text.setMinimumWidth(180)
         self.denoise_text = QLabel("Select Denoise Value:", self)
         self.denoise_text.setMinimumHeight(40)
+        self.denoise_text.setMinimumWidth(180)
         self.descale_text = QLabel("Select Descale Value:", self)
         self.descale_text.setMinimumHeight(40)
-        self.upscale_model_text = QLabel("Select Upscale Model:", self)
-        self.upscale_model_text.setMinimumHeight(40)
-        self.upscale_model_text.setVisible(False)
+        self.descale_text.setMinimumWidth(180)
   
         self.models = os.listdir("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
@@ -102,6 +111,7 @@ class MyWindow(QMainWindow):
             tooltip = self.model_combo.itemText(i)
             self.model_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
         self.model_combo.setMinimumHeight(40)
+        self.model_combo.setMinimumWidth(160)
         
         self.sampler_combo = QComboBox(self)
         self.sampler_combo.addItems(self.samplers)
@@ -109,6 +119,7 @@ class MyWindow(QMainWindow):
             tooltip = self.sampler_combo.itemText(i)
             self.sampler_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
         self.sampler_combo.setMinimumHeight(40)
+        self.sampler_combo.setMinimumWidth(160)
         
         self.steps_spinner = QSpinBox(self)
         self.steps_spinner.setRange(10, 50)
@@ -151,31 +162,48 @@ class MyWindow(QMainWindow):
         self.upscale_checkbox.stateChanged.connect(self.upscale_checked)
         self.upscale_checkbox.setMinimumHeight(40)
         
-        self.resolution_combo = QComboBox(self)
-        self.resolutions = ["1080p / FHD", "1440p / QHD", "2160p / 4K UHD", "4320p / 8K UHD"]
-        self.resolution_combo.addItems(self.resolutions)
-        for i in range(0,len(self.resolutions)-1):
-            tooltip = self.resolution_combo.itemText(i)
-            self.resolution_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
-        self.resolution_combo.setMinimumHeight(40)
-        self.resolution_combo.setVisible(False)
-        
         self.upscale_model = QComboBox(self)
         self.upscale_model.addItems(self.models)
         for i in range(0,len(self.models)-1):
             tooltip = self.upscale_model.itemText(i)
             self.upscale_model.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
         self.upscale_model.setMinimumHeight(40)
+        self.upscale_model.setMinimumWidth(160)
         self.upscale_model.setVisible(False)
         
-        self.config_layout.addRow(self.model_text, self.model_combo)
-        self.config_layout.addRow(self.sampler_text, self.sampler_combo)
-        self.config_layout.addRow(self.steps_text, self.steps_spinner)
-        self.config_layout.addRow(self.cfg_text, self.cfg_spinner)
-        self.config_layout.addRow(self.denoise_text, self.denoise_spinner)
-        self.config_layout.addRow(self.descale_text, self.descale_spinner)
-        self.config_layout.addRow(self.upscale_checkbox, self.resolution_combo)
-        self.config_layout.addRow(self.upscale_model_text, self.upscale_model)
+        self.upscale_radio_group = QtWidgets.QButtonGroup(self)
+        self.upscale_radio_2x = QRadioButton("2x")
+        self.upscale_radio_3x = QRadioButton("3x")
+        self.upscale_radio_4x = QRadioButton("4x")
+        self.upscale_radio_5x = QRadioButton("5x")
+        self.upscale_radio_group.addButton(self.upscale_radio_2x, 2)
+        self.upscale_radio_group.addButton(self.upscale_radio_3x, 3)
+        self.upscale_radio_group.addButton(self.upscale_radio_4x, 4)
+        self.upscale_radio_group.addButton(self.upscale_radio_5x, 5)
+        self.upscale_radio_2x.setChecked(True)
+        self.upscale_radio_2x.setVisible(False)
+        self.upscale_radio_3x.setVisible(False)
+        self.upscale_radio_4x.setVisible(False)
+        self.upscale_radio_5x.setVisible(False)
+        
+        self.config_layout.addWidget(self.model_text, 0, 0, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.model_combo, 0, 2, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.sampler_text, 1, 0, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.sampler_combo, 1, 2, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.steps_text, 2, 0, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.steps_spinner, 2, 2, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.cfg_text, 3, 0, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.cfg_spinner, 3, 2, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.denoise_text, 4, 0, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.denoise_spinner, 4, 2, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.descale_text, 5, 0, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.descale_spinner, 5, 2, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.upscale_checkbox, 6, 0, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.upscale_model, 6, 2, 2, 1, Qt.AlignTop)
+        self.config_layout.addWidget(self.upscale_radio_2x, 7, 0, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_3x, 7, 1, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_4x, 7, 2, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_5x, 7, 3, 1, 1, Qt.AlignCenter)  
 
         self.config_box.setLayout(self.config_layout)
         
@@ -288,9 +316,13 @@ class MyWindow(QMainWindow):
             self.stitch_prog_loading.setGeometry(110, 865, 30, 30)
             self.stitch_prog_done.setGeometry(120, 870, 20, 20)
             self.stitch_prog_text.setGeometry(160, 870, 200, 20)
-            self.resolution_combo.setVisible(True)
-            self.upscale_model_text.setVisible(True)
             self.upscale_model.setVisible(True)
+            self.upscale_radio_2x.setVisible(True)
+            self.upscale_radio_3x.setVisible(True)
+            self.upscale_radio_4x.setVisible(True)
+            self.upscale_radio_5x.setVisible(True)
+            
+            print(self.upscale_radio_group.checkedId())
         else:
             self.setFixedSize(400, 860)
             self.config_box.setGeometry(20, 70, 360, 375)
@@ -306,10 +338,11 @@ class MyWindow(QMainWindow):
             self.stitch_prog_loading.setGeometry(110, 815, 30, 30)
             self.stitch_prog_done.setGeometry(120, 820, 20, 20)
             self.stitch_prog_text.setGeometry(160, 820, 200, 20)
-            self.resolution_combo.setVisible(False)
-            self.upscale_model_text.setVisible(False)
             self.upscale_model.setVisible(False)
-            
+            self.upscale_radio_2x.setVisible(False)
+            self.upscale_radio_3x.setVisible(False)
+            self.upscale_radio_4x.setVisible(False)
+            self.upscale_radio_5x.setVisible(False)
 
 
     def uploadClicked(self): 
@@ -391,9 +424,10 @@ class MyWindow(QMainWindow):
         denoise = self.denoise_spinner.value()
         descale = self.descale_spinner.value()
         upscale = self.upscale_checkbox.isChecked()
+        upscale_loops = self.upscale_radio_group.checkedId() # Will return "2" for 2x, "3" for 3x, etc
         if(upscale):
             upscale_name = self.upscale_model.currentText()
-            img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale, upscale, upscale_name)
+            img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale, upscale, upscale_name, upscale_loops)
         else:
             img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
         self.genFinished()

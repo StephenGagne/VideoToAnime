@@ -29,7 +29,8 @@ QPushButton:disabled {
 /* Text styles */
 QLabel,
 QTextEdit,
-QCheckBox {
+QCheckBox,
+QRadioButton {
     color: rgba(56, 189, 248, 1);
 }
 
