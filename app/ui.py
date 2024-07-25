@@ -172,19 +172,19 @@ class MyWindow(QMainWindow):
         self.upscale_model.setVisible(False)
         
         self.upscale_radio_group = QtWidgets.QButtonGroup(self)
+        self.upscale_radio_1x = QRadioButton("1x")
         self.upscale_radio_2x = QRadioButton("2x")
         self.upscale_radio_3x = QRadioButton("3x")
         self.upscale_radio_4x = QRadioButton("4x")
-        self.upscale_radio_5x = QRadioButton("5x")
+        self.upscale_radio_group.addButton(self.upscale_radio_1x, 1)
         self.upscale_radio_group.addButton(self.upscale_radio_2x, 2)
         self.upscale_radio_group.addButton(self.upscale_radio_3x, 3)
         self.upscale_radio_group.addButton(self.upscale_radio_4x, 4)
-        self.upscale_radio_group.addButton(self.upscale_radio_5x, 5)
-        self.upscale_radio_2x.setChecked(True)
+        self.upscale_radio_1x.setChecked(True)
+        self.upscale_radio_1x.setVisible(False)
         self.upscale_radio_2x.setVisible(False)
         self.upscale_radio_3x.setVisible(False)
         self.upscale_radio_4x.setVisible(False)
-        self.upscale_radio_5x.setVisible(False)
         
         self.config_layout.addWidget(self.model_text, 0, 0, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.model_combo, 0, 2, 2, 1, Qt.AlignTop)
@@ -200,10 +200,10 @@ class MyWindow(QMainWindow):
         self.config_layout.addWidget(self.descale_spinner, 5, 2, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.upscale_checkbox, 6, 0, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.upscale_model, 6, 2, 2, 1, Qt.AlignTop)
-        self.config_layout.addWidget(self.upscale_radio_2x, 7, 0, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_3x, 7, 1, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_4x, 7, 2, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_5x, 7, 3, 1, 1, Qt.AlignCenter)  
+        self.config_layout.addWidget(self.upscale_radio_1x, 7, 0, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_2x, 7, 1, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_3x, 7, 2, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_4x, 7, 3, 1, 1, Qt.AlignCenter)  
 
         self.config_box.setLayout(self.config_layout)
         
@@ -317,10 +317,10 @@ class MyWindow(QMainWindow):
             self.stitch_prog_done.setGeometry(120, 870, 20, 20)
             self.stitch_prog_text.setGeometry(160, 870, 200, 20)
             self.upscale_model.setVisible(True)
+            self.upscale_radio_1x.setVisible(True)
             self.upscale_radio_2x.setVisible(True)
             self.upscale_radio_3x.setVisible(True)
             self.upscale_radio_4x.setVisible(True)
-            self.upscale_radio_5x.setVisible(True)
             
             print(self.upscale_radio_group.checkedId())
         else:
@@ -339,10 +339,10 @@ class MyWindow(QMainWindow):
             self.stitch_prog_done.setGeometry(120, 820, 20, 20)
             self.stitch_prog_text.setGeometry(160, 820, 200, 20)
             self.upscale_model.setVisible(False)
+            self.upscale_radio_1x.setVisible(False)
             self.upscale_radio_2x.setVisible(False)
             self.upscale_radio_3x.setVisible(False)
             self.upscale_radio_4x.setVisible(False)
-            self.upscale_radio_5x.setVisible(False)
 
 
     def uploadClicked(self): 
