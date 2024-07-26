@@ -30,6 +30,8 @@ import video_splitter
 import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 from cleanup import cleanup
+from urllib.request import urlopen
+from urllib.error import URLError
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -37,7 +39,7 @@ class MyWindow(QMainWindow):
         self.move(100, 50)  #set size and position of window
         self.setWindowTitle("AnimateXpress")
         self.setWindowIcon(QIcon("assets/AnimateXpress.png"))
-        self.setFixedSize(400, 860)  # Prevent resizing
+        self.setFixedSize(400, 910)  # Prevent resizing
         self.__file = None
         self.__frame_total = 0
         self.__recover_frame = 1
@@ -72,14 +74,8 @@ class MyWindow(QMainWindow):
 
         #config 
         self.config_box = QGroupBox("Model Configuration", self)
-        self.config_box.setGeometry(20, 70, 360, 375)
         self.config_layout = QGridLayout(self)
         self.config_layout.setOriginCorner(Qt.TopLeftCorner)
-        self.config_layout.setVerticalSpacing(25)
-        self.config_layout.setColumnStretch(0, 1)
-        self.config_layout.setColumnStretch(1, 1)
-        self.config_layout.setColumnStretch(2, 1)
-        self.config_layout.setColumnStretch(3, 1)
   
         self.model_text = QLabel("Set Model:", self)
         self.model_text.setMinimumHeight(40)
@@ -185,6 +181,11 @@ class MyWindow(QMainWindow):
         self.upscale_radio_2x.setVisible(False)
         self.upscale_radio_3x.setVisible(False)
         self.upscale_radio_4x.setVisible(False)
+        self.upscale_warning = QLabel("Using upscaling will drastically increase rendering time!")
+        self.upscale_warning.setStyleSheet("color: red; border-color: white;")
+        self.upscale_warning.setVisible(False)
+        self.upscale_warning.setMaximumHeight(25)
+        self.upscale_warning.setMinimumWidth(340)
         
         self.config_layout.addWidget(self.model_text, 0, 0, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.model_combo, 0, 2, 2, 1, Qt.AlignTop)
@@ -203,8 +204,25 @@ class MyWindow(QMainWindow):
         self.config_layout.addWidget(self.upscale_radio_1x, 7, 0, 1, 1, Qt.AlignCenter)
         self.config_layout.addWidget(self.upscale_radio_2x, 7, 1, 1, 1, Qt.AlignCenter)
         self.config_layout.addWidget(self.upscale_radio_3x, 7, 2, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_4x, 7, 3, 1, 1, Qt.AlignCenter)  
+        self.config_layout.addWidget(self.upscale_radio_4x, 7, 3, 1, 1, Qt.AlignLeft)  
+        self.config_layout.addWidget(self.upscale_warning, 8, 0, -1, 1, Qt.AlignCenter)
+        
+        self.config_layout.setVerticalSpacing(25)
+        self.config_layout.setColumnStretch(0, 1)
+        self.config_layout.setColumnStretch(1, 1)
+        self.config_layout.setColumnStretch(2, 1)
+        self.config_layout.setColumnStretch(3, 1)
+        self.config_layout.setRowStretch(0, 3)
+        self.config_layout.setRowStretch(1, 3)
+        self.config_layout.setRowStretch(2, 3)
+        self.config_layout.setRowStretch(3, 3)
+        self.config_layout.setRowStretch(4, 3)
+        self.config_layout.setRowStretch(5, 3)
+        self.config_layout.setRowStretch(6, 3)
+        self.config_layout.setRowStretch(7, 3)
+        self.config_layout.setRowStretch(8, 0)
 
+        self.config_box.setGeometry(20, 70, 360, 375)
         self.config_box.setLayout(self.config_layout)
         
         #prompts group
@@ -299,32 +317,46 @@ class MyWindow(QMainWindow):
         
         if len(os.listdir("../generatedFrames")) > 1:
             self.recoverDetected()
+        
+        self.auto1111check()
 
+    def auto1111check(self):
+        try:
+            html = urlopen("http://127.0.0.1:7860/sdapi/v1/img2imgmm")
+        except URLError:
+            a1111dlg = QMessageBox()
+            a1111dlg.setWindowTitle("Error - Automatic 1111 Not Found!")
+            a1111dlg.setIcon(QMessageBox.Critical)
+            a1111dlg.setText("Automatic 1111 is either not running or not running in api mode.\nIf not running go to your automatic1111 root directory and run run.bat\nIf it is running then please add --api to COMMANDLINE-ARGS in automatic1111/webui/webui-user.bat and run it again")
+            a1111dlg.exec_()
+    
     def upscale_checked(self):
         if self.upscale_checkbox.isChecked() == True:
-            self.setFixedSize(400, 910)
-            self.config_box.setGeometry(20, 70, 360, 425)
-            self.prompt_box.setGeometry(20, 515, 360, 180)
-            self.start_line.setGeometry(20, 720, 360, 10)
-            self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 710)
-            self.split_prog_loading.setGeometry(115, 755, 30, 30)
-            self.split_prog_done.setGeometry(120, 760, 20, 20)
-            self.split_prog_text.setGeometry(160, 760, 200, 20)
-            self.gen_prog_loading.setGeometry(115, 810, 30, 30)
-            self.gen_prog_done.setGeometry(120, 815, 20, 20)
-            self.gen_prog_text.setGeometry(160, 815, 200, 20)
-            self.stitch_prog_loading.setGeometry(110, 865, 30, 30)
-            self.stitch_prog_done.setGeometry(120, 870, 20, 20)
-            self.stitch_prog_text.setGeometry(160, 870, 200, 20)
+            self.setFixedSize(400, 950)
+            self.move(100, 25)
+            self.config_box.setGeometry(20, 70, 360, 475)
+            self.prompt_box.setGeometry(20, 565, 360, 180)
+            self.start_line.setGeometry(20, 770, 360, 10)
+            self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 760)
+            self.split_prog_loading.setGeometry(115, 805, 30, 30)
+            self.split_prog_done.setGeometry(120, 810, 20, 20)
+            self.split_prog_text.setGeometry(160, 810, 200, 20)
+            self.gen_prog_loading.setGeometry(115, 860, 30, 30)
+            self.gen_prog_done.setGeometry(120, 865, 20, 20)
+            self.gen_prog_text.setGeometry(160, 865, 200, 20)
+            self.stitch_prog_loading.setGeometry(110, 915, 30, 30)
+            self.stitch_prog_done.setGeometry(120, 920, 20, 20)
+            self.stitch_prog_text.setGeometry(160, 920, 200, 20)
             self.upscale_model.setVisible(True)
             self.upscale_radio_1x.setVisible(True)
             self.upscale_radio_2x.setVisible(True)
             self.upscale_radio_3x.setVisible(True)
             self.upscale_radio_4x.setVisible(True)
+            self.upscale_warning.setVisible(True)
             
-            print(self.upscale_radio_group.checkedId())
         else:
             self.setFixedSize(400, 860)
+            self.move(100, 50)
             self.config_box.setGeometry(20, 70, 360, 375)
             self.prompt_box.setGeometry(20, 465, 360, 180)
             self.start_line.setGeometry(20, 670, 360, 10)
@@ -343,6 +375,7 @@ class MyWindow(QMainWindow):
             self.upscale_radio_2x.setVisible(False)
             self.upscale_radio_3x.setVisible(False)
             self.upscale_radio_4x.setVisible(False)
+            self.upscale_warning.setVisible(False)
 
 
     def uploadClicked(self): 
