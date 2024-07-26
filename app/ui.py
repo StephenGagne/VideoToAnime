@@ -405,7 +405,7 @@ class MyWindow(QMainWindow):
         self.stitch_prog_gif.start()
         self.stitch_prog_text.setVisible(True)
         animated_video_name = self.__file.split("/")[-1].split(".")[0]
-        stitcher.stitch_frames(animated_video_name)
+        stitcher.stitch_frames(animated_video_name, self.__file)
         self.stitchFinished()
     
     def stitchFinished(self):
