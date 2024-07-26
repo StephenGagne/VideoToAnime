@@ -40,8 +40,9 @@ def merge_audio_to_video(video_path, audio_path, output_path):
     print(f"Successfully merged audio with video. Output saved at '{output_path}'")
 
 # Example usage
-video_path = "..\\videoExtract\\tenSeconds_no_audio.mov"  # or .mov
-audio_path = "..\\audio\\tenSeconds.mp3"
-output_path = "..\\output\\video_with_audio.mov"  # or .mov
+# if __name__ == "__main__":
+#     video_path = "..\\videoExtract\\tenSeconds_no_audio.mov"  # or .mov
+#     audio_path = "..\\audio\\tenSeconds.mp3"
+#     output_path = "..\\output\\video_with_audio.mov"  # or .mov
 
-merge_audio_to_video(video_path, audio_path, output_path)
+#     merge_audio_to_video(video_path, audio_path, output_path)
