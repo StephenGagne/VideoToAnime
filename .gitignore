@@ -3,5 +3,8 @@ originalFrames/*.jpg
 originalFrames/*.png
 generatedFrames/*.jpg
 generatedFrames/*.png
+output/**.mov
+input/**.mp4
+input/**.mov
 app/__pycache__/*
 {\rtf1}

@@ -29,10 +29,15 @@ def split(video_name):
 
         # Saves image of the current frame in jpg file
         name =  '..\\originalFrames\\frame' + str(currentFrame) + '.jpg'
-        #print('Creating...' + name)
         
         # Write the frame to disk if it's not empty
         if not frame is None:
+            #Merge the last frame and the current frame 30% last 70% current
+            if currentFrame != 0:
+                lastName = '..\\originalFrames\\frame' + str(currentFrame-1) + '.jpg'
+                lastFrame = cv2.imread(lastName) 
+
+                frame = lastFrame * 0.3 + frame * 0.7
             cv2.imwrite(name, frame)
         else:
             print("Empty frame encountered")
@@ -42,3 +47,6 @@ def split(video_name):
     # When everything is done, release the capture
     cap.release()
     return
+
+if __name__ == '__main__':
+    split("C:\\VideoToAnime\\input\\example.mp4")

@@ -13,8 +13,6 @@ out_dir = '../'
 out_dir_i2i = os.path.join(out_dir, 'generatedFrames')
 os.makedirs(out_dir_i2i, exist_ok=True)
 inputDir = "C:\\VideoToAnime\\originalFrames\\"
-mergedDir = "merged"
-os.makedirs(mergedDir, exist_ok=True)
 
 
 def timestamp():
@@ -81,15 +79,6 @@ def create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, 
     
     return payload
     
-def image_merge(previousImage, currentImage, frame):
-    image1 = cv2.imread(previousImage) 
-    image2 = cv2.imread(currentImage) 
-
-    image3 = image1 * 0.3 + image2 * 0.7
-    
-    outputDirectory = os.path.join(mergedDir, frame)
-    cv2.imwrite(outputDirectory, image3)
-    
 def create_upscale_payload(positive, negative, imagePath, model_name, sampler):
     init_images = [
         encode_file_to_base64(imagePath)
@@ -114,21 +103,8 @@ def create_upscale_payload(positive, negative, imagePath, model_name, sampler):
 
 def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, upscale=False, upscale_name="", upscale_loops=1):
     counter = 0
-    previousImage = ""
     for frame in sorted([f for f in os.listdir(inputDir) if f.endswith('.png') or f.endswith('.jpg')], key=lambda x: int(x[5:-4])):
         imagePath = os.path.join(inputDir, frame)
-    
-        if(counter == 0):
-            previousImage = imagePath
-            counter = 1
-            
-        image_merge(previousImage, imagePath, frame)
-        
-        previousImage = imagePath
-
-    #Every Frame sorted
-    for frame in sorted([f for f in os.listdir(mergedDir) if f.endswith('.png') or f.endswith('.jpg')], key=lambda x: int(x[5:-4])):
-        imagePath = os.path.join(mergedDir, frame)
         payload = create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, model_name, sampler)
         savePath = "../generatedFrames/"+frame
         call_img2img_api(savePath, **payload)
