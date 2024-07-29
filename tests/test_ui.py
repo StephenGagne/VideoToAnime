@@ -1,12 +1,22 @@
+import sys
+import os
 import unittest
+from unittest.mock import MagicMock, patch
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtTest import QTest
 from PyQt5.QtCore import Qt
-import sys
-import os
+
+# Mock the missing modules
+sys.modules['video_splitter'] = MagicMock()
+sys.modules['ai_image_generation'] = MagicMock()
+sys.modules['frame_stitcher'] = MagicMock()
+sys.modules['cleanup'] = MagicMock()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app.ui import MyWindow
+
+# Mock the os.listdir function to avoid FileNotFoundError
+with patch('os.listdir', return_value=['model1', 'model2']):
+    from app.ui import MyWindow  # Adjust the import based on your project structure
 
 class TestMyWindow(unittest.TestCase):
 
@@ -16,53 +26,55 @@ class TestMyWindow(unittest.TestCase):
 
     def setUp(self):
         self.window = MyWindow()
+        self.window.show()
 
     def tearDown(self):
         self.window.close()
 
-    def test_window_initialization(self):
-        self.assertEqual(self.window.windowTitle(), "Project - Group 8")
-        self.assertEqual(self.window.width(), 400)
-        self.assertEqual(self.window.height(), 450)
-        self.assertFalse(self.window.isResizable())
-        
-    def test_upload_button(self):
-        self.assertEqual(self.window.uploadButton.text(), "Upload")
-        self.assertEqual(self.window.uploadButton.toolTip(), "Upload a video to be processed")
-        
-    def test_config_button(self):
-        self.assertEqual(self.window.configButton.text(), "Config")
-        self.assertEqual(self.window.configButton.toolTip(), "Set or change image generation options")
-        
-    def test_prompt_texts(self):
-        self.assertEqual(self.window.positive_prompt_text.text(), "Positive Prompts: ")
-        self.assertEqual(self.window.negative_prompt_text.text(), "Negative Prompts: ")
-        
-    def test_start_button(self):
-        self.assertEqual(self.window.startButton.text(), "Start")
-        self.assertEqual(self.window.startButton.toolTip(), "Initiate the conversion process")
+    def test_initial_state(self):
+        self.assertEqual(self.window.windowTitle(), "AnimateXpress")
+        self.assertEqual(self.window.uploadButton.text(), "Upload Video")
         self.assertFalse(self.window.startButton.isEnabled())
-        
-    def test_properties_button(self):
-        self.assertEqual(self.window.properties.text(), "Project Properties")
-        self.assertEqual(self.window.properties.toolTip(), "Show project properties, including the current video and system properties")
-        
-    def test_recover_detected(self):
-        self.window.recoverDetected()
-        self.assertFalse(self.window.uploadButton.isVisible())
-        self.assertFalse(self.window.configButton.isVisible())
-        self.assertFalse(self.window.positive_prompt_text.isVisible())
-        self.assertFalse(self.window.positive_prompt.isVisible())
-        self.assertFalse(self.window.negative_prompt_text.isVisible())
-        self.assertFalse(self.window.negative_prompt.isVisible())
-        self.assertFalse(self.window.startButton.isVisible())
-        self.assertFalse(self.window.properties.isVisible())
-        
-        self.assertTrue(self.window.recover_label_1.isVisible())
-        self.assertTrue(self.window.recover_label_2.isVisible())
-        self.assertTrue(self.window.recover_yes.isVisible())
-        self.assertTrue(self.window.recover_no.isVisible())
-        self.assertTrue(self.window.recover_thumbnail.isVisible())
+
+    @patch('PyQt5.QtWidgets.QFileDialog.getOpenFileName', return_value=('dummy_video.mp4', ''))
+    def test_upload_button(self, mock_getOpenFileName):
+        QTest.mouseClick(self.window.uploadButton, Qt.LeftButton)
+        self.assertTrue(self.window.startButton.isEnabled())
+        self.assertEqual(self.window.__file, 'dummy_video.mp4')
+
+    @patch('PyQt5.QtWidgets.QFileDialog.getOpenFileName', return_value=('dummy_video.mp4', ''))
+    @patch.object(MyWindow, 'splitFrames')
+    def test_generate_video_button_without_prompts(self, mock_splitFrames, mock_getOpenFileName):
+        QTest.mouseClick(self.window.uploadButton, Qt.LeftButton)
+        self.window.__file = "dummy_video.mp4"
+        self.window.startButton.setEnabled(True)
+        QTest.mouseClick(self.window.startButton, Qt.LeftButton)
+        self.assertTrue(self.window.startButton.isEnabled())
+        mock_splitFrames.assert_not_called()  # Ensures splitFrames is not called due to missing prompt
+
+    @patch('PyQt5.QtWidgets.QFileDialog.getOpenFileName', return_value=('dummy_video.mp4', ''))
+    @patch.object(MyWindow, 'splitFrames')
+    def test_generate_video_button_with_prompts(self, mock_splitFrames, mock_getOpenFileName):
+        QTest.mouseClick(self.window.uploadButton, Qt.LeftButton)
+        self.window.__file = "dummy_video.mp4"
+        self.window.startButton.setEnabled(True)
+        self.window.positive_prompt.setPlainText("Test Positive Prompt")
+        QTest.mouseClick(self.window.startButton, Qt.LeftButton)
+        mock_splitFrames.assert_called_once()  # Ensures splitFrames is called
+
+    def test_upscale_checkbox(self):
+        initial_height = self.window.height()
+        QTest.mouseClick(self.window.upscale_checkbox, Qt.LeftButton)
+        self.assertGreater(self.window.height(), initial_height)
+        QTest.mouseClick(self.window.upscale_checkbox, Qt.LeftButton)
+        self.assertEqual(self.window.height(), initial_height)
+
+    def test_configure_model_and_sampler(self):
+        self.window.model_combo.setCurrentIndex(1)
+        self.assertEqual(self.window.model_combo.currentText(), self.window.models[1])
+
+        self.window.sampler_combo.setCurrentIndex(1)
+        self.assertEqual(self.window.sampler_combo.currentText(), self.window.samplers[1])
 
 if __name__ == "__main__":
     unittest.main()
