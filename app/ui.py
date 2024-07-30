@@ -294,7 +294,7 @@ class MyWindow(QMainWindow):
         self.stitch_prog_done.setVisible(False)
         self.stitch_prog_text = QLabel(self)
         self.stitch_prog_text.setGeometry(160, 820, 200, 20)
-        self.stitch_prog_text.setText("Stiching video back together...")
+        self.stitch_prog_text.setText("Stiching the video back together...")
         self.stitch_prog_text.setVisible(False)
         
         if len(os.listdir("../generatedFrames")) > 1:
@@ -382,6 +382,20 @@ class MyWindow(QMainWindow):
             errdlg.exec_()
             return
         if self.__file is not None:
+            self.split_prog_done.setVisible(False)
+            self.split_prog_text.setVisible(False)
+            self.split_prog_text.setText("Splitting frames...")
+            self.split_prog_text.setStyleSheet("color: rgba(56, 189, 248, 1);")
+            self.gen_prog_done.setVisible(False)
+            self.gen_prog_text.setVisible(False)
+            self.gen_prog_text.setText("Generating frames...")
+            self.gen_prog_text.setStyleSheet("color: rgba(56, 189, 248, 1);")
+            self.stitch_prog_done.setVisible(False)
+            self.stitch_prog_text.setVisible(False)
+            self.stitch_prog_text.setText("Stitching the video back together...")
+            self.stitch_prog_text.setStyleSheet("color: rgba(56, 189, 248, 1);")
+            
+            
             self.start_thread = QThread(self)
             self.start_worker = Worker(self.splitFrames)
             self.start_worker.moveToThread(self.start_thread)
