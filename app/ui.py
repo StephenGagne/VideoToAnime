@@ -31,7 +31,7 @@ import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 from cleanup import cleanup
 from urllib.request import urlopen
-from urllib.error import URLError
+from urllib.error import *
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -98,7 +98,7 @@ class MyWindow(QMainWindow):
         self.descale_text.setMinimumHeight(40)
         self.descale_text.setMinimumWidth(180)
   
-        self.models = os.listdir("../config/Models")#("C:\AI_SD\webui\models\Stable-diffusion")
+        self.models = os.listdir("C:\\AI_SD\\webui\\models\\Stable-diffusion")#("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
         self.samplers = ["Euler a", "Euler", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
@@ -376,7 +376,14 @@ class MyWindow(QMainWindow):
 
     def auto1111check(self):
         try:
-            html = urlopen("http://127.0.0.1:7860/sdapi/v1/img2imgmm")
+            html = urlopen("http://127.0.0.1:7860/sdapi/v1/img2img")
+        except HTTPError as e:
+            if(e.code == 404):
+                a1111dlg = QMessageBox()
+                a1111dlg.setWindowTitle("Error - Automatic 1111 Not Found!")
+                a1111dlg.setIcon(QMessageBox.Critical)
+                a1111dlg.setText("Automatic 1111 is either not running or not running in api mode.\nIf not running go to your automatic1111 root directory and run run.bat\nIf it is running then please add --api to COMMANDLINE-ARGS in automatic1111/webui/webui-user.bat and run it again")
+                a1111dlg.exec_()
         except URLError:
             a1111dlg = QMessageBox()
             a1111dlg.setWindowTitle("Error - Automatic 1111 Not Found!")
@@ -392,6 +399,7 @@ class MyWindow(QMainWindow):
             self.prompt_box.setGeometry(20, 565, 360, 180)
             self.start_line.setGeometry(20, 770, 360, 10)
             self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 760)
+            self.cancelButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 760)
             self.split_prog_loading.setGeometry(115, 805, 30, 30)
             self.split_prog_done.setGeometry(120, 810, 20, 20)
             self.split_prog_text.setGeometry(160, 810, 200, 20)
