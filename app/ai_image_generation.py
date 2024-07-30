@@ -79,29 +79,36 @@ def create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, 
     
     return payload
     
-def create_upscale_payload(positive, negative, imagePath, model_name, sampler):
+def create_upscale_payload(positive, negative, imagePath, model_name, sampler, upscale_width):
     init_images = [
         encode_file_to_base64(imagePath)
     ]
+    
+    temp_img = Image.open(imagePath)
+    
+    img_width = temp_img.width
+
+    upscale_quotient = upscale_width/img_width
     
     payload = {
         "sd_model_checkpoint":model_name,
         "sd_vae":"",
         "prompt":positive,
         "negative_prompt":negative,
-        "denoising_strength": 0.20,
+        "cfg_scale": 15,
+        "denoising_strength": 0.10,
         "init_images":init_images,
         "sampler_index":sampler,
-        "steps":40,
+        "steps":50,
         "script_name": "SD upscale",
-        "script_args": ["", 64, "R-ESRGAN 4x+", 1.5],
+        "script_args": ["", 64, "R-ESRGAN 4x+", upscale_quotient],
         "alwayson_scripts":{
         }
     }
     
     return payload
 
-def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, upscale=False, upscale_name="", upscale_loops=1):
+def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, upscale=False, upscale_name="", upscale_value=1.5):
     counter = 0
     for frame in sorted([f for f in os.listdir(inputDir) if f.endswith('.png') or f.endswith('.jpg')], key=lambda x: int(x[5:-4])):
         imagePath = os.path.join(inputDir, frame)
@@ -109,13 +116,10 @@ def generate_images(positive, negative, model_name, sampler, steps, cfg, denoise
         savePath = "../generatedFrames/"+frame
         call_img2img_api(savePath, **payload)
         if(upscale):
-            upscales = 0
-            while upscale_loops > upscales:
-                imagePath = os.path.join(out_dir_i2i, frame)
-                payload = create_upscale_payload(positive, negative, imagePath, upscale_name, sampler)
-                savePath = "../generatedFrames/"+frame
-                call_img2img_api(savePath, **payload)
-                upscales = upscales + 1
+            imagePath = os.path.join(out_dir_i2i, frame)
+            payload = create_upscale_payload(positive, negative, imagePath, upscale_name, sampler, upscale_value)
+            savePath = "../generatedFrames/"+frame
+            call_img2img_api(savePath, **payload)
 
 if __name__ == '__main__':
     positive = "(best quality, masterpiece), a white man, brown short hair, brown beard"

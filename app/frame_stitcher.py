@@ -46,7 +46,6 @@ def stitch_frames(videoName,videoPath):
     print("Video has been created successfully!")
 
 if __name__ == "__main__":
-    video_name = "tenSeconds"
-    video_path = "D:\\repo\\VideoToAnime\\input\\tenSeconds.mp4"
-    audio_path = "..\\audio\\tenSeconds.mp3"
+    video_name = "AML_AI-Clip"
+    video_path = "C:\\VideoToAnime\\input\\AML_AI-Clip.mp4"
     stitch_frames(video_name, video_path)
