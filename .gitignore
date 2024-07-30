@@ -8,3 +8,4 @@ input/**.mp4
 input/**.mov
 app/__pycache__/*
 {\rtf1}
+config/settings.ini

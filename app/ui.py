@@ -30,6 +30,8 @@ import video_splitter
 import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 from cleanup import cleanup
+from urllib.request import urlopen
+from urllib.error import URLError
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -37,10 +39,12 @@ class MyWindow(QMainWindow):
         self.move(100, 50)  #set size and position of window
         self.setWindowTitle("AnimateXpress")
         self.setWindowIcon(QIcon("assets/AnimateXpress.png"))
-        self.setFixedSize(400, 860)  # Prevent resizing
+        self.setFixedSize(400, 910)  # Prevent resizing
+        self.settings = QSettings("../config/settings.ini", QSettings.IniFormat)
         self.__file = None
         self.__frame_total = 0
         self.__recover_frame = 1
+        print(self.settings.isWritable())
         self.initUI()
 
     def initUI(self): 
@@ -72,14 +76,8 @@ class MyWindow(QMainWindow):
 
         #config 
         self.config_box = QGroupBox("Model Configuration", self)
-        self.config_box.setGeometry(20, 70, 360, 375)
         self.config_layout = QGridLayout(self)
         self.config_layout.setOriginCorner(Qt.TopLeftCorner)
-        self.config_layout.setVerticalSpacing(25)
-        self.config_layout.setColumnStretch(0, 1)
-        self.config_layout.setColumnStretch(1, 1)
-        self.config_layout.setColumnStretch(2, 1)
-        self.config_layout.setColumnStretch(3, 1)
   
         self.model_text = QLabel("Set Model:", self)
         self.model_text.setMinimumHeight(40)
@@ -104,12 +102,15 @@ class MyWindow(QMainWindow):
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
         self.samplers = ["Euler a", "Euler", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
-
+        
         self.model_combo = QComboBox(self)
         self.model_combo.addItems(self.models)
         for i in range(0,len(self.models)-1):
             tooltip = self.model_combo.itemText(i)
             self.model_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+        if self.settings.contains("model"):
+            if self.settings.value("model") in self.models:                 
+                self.model_combo.setCurrentIndex(self.models.index(self.settings.value("model")))
         self.model_combo.setMinimumHeight(40)
         self.model_combo.setMinimumWidth(160)
         
@@ -118,13 +119,18 @@ class MyWindow(QMainWindow):
         for i in range(0,len(self.samplers)-1):
             tooltip = self.sampler_combo.itemText(i)
             self.sampler_combo.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+        if self.settings.contains("sampler"):
+            self.sampler_combo.setCurrentIndex(self.samplers.index(self.settings.value("sampler")))
         self.sampler_combo.setMinimumHeight(40)
         self.sampler_combo.setMinimumWidth(160)
         
         self.steps_spinner = QSpinBox(self)
         self.steps_spinner.setRange(10, 50)
         self.steps_spinner.setSingleStep(1)
-        self.steps_spinner.setValue(15)
+        if self.settings.contains("steps"):
+            self.steps_spinner.setValue(int(self.settings.value("steps")))
+        else:
+            self.steps_spinner.setValue(15)
         self.steps_spinner.setMaximumWidth(50)
         self.steps_spinner.setMinimumHeight(40)
         self.steps_spinner.setAlignment(Qt.AlignCenter)
@@ -133,7 +139,10 @@ class MyWindow(QMainWindow):
         self.cfg_spinner = QDoubleSpinBox(self)
         self.cfg_spinner.setRange(1, 20)
         self.cfg_spinner.setSingleStep(0.5)
-        self.cfg_spinner.setValue(8)
+        if self.settings.contains("cfg"):
+            self.cfg_spinner.setValue(float(self.settings.value("cfg")))
+        else:
+            self.cfg_spinner.setValue(8)
         self.cfg_spinner.setMaximumWidth(50)
         self.cfg_spinner.setMinimumHeight(40)
         self.cfg_spinner.setAlignment(Qt.AlignCenter)
@@ -142,7 +151,10 @@ class MyWindow(QMainWindow):
         self.denoise_spinner = QDoubleSpinBox(self)
         self.denoise_spinner.setRange(0, 1)
         self.denoise_spinner.setSingleStep(0.01)
-        self.denoise_spinner.setValue(0.40)
+        if self.settings.contains("denoise"):
+            self.denoise_spinner.setValue(float(self.settings.value("denoise")))
+        else:
+            self.denoise_spinner.setValue(0.40)
         self.denoise_spinner.setMaximumWidth(50)
         self.denoise_spinner.setMinimumHeight(40)
         self.denoise_spinner.setAlignment(Qt.AlignCenter)
@@ -151,7 +163,10 @@ class MyWindow(QMainWindow):
         self.descale_spinner = QDoubleSpinBox(self)
         self.descale_spinner.setRange(0, 1)
         self.descale_spinner.setSingleStep(0.05)
-        self.descale_spinner.setValue(1)
+        if self.settings.contains("descale"):
+            self.descale_spinner.setValue(float(self.settings.value("descale")))
+        else:
+            self.descale_spinner.setValue(1)
         self.descale_spinner.setMaximumWidth(50)
         self.descale_spinner.setMinimumHeight(40)
         self.descale_spinner.setAlignment(Qt.AlignCenter)
@@ -172,19 +187,24 @@ class MyWindow(QMainWindow):
         self.upscale_model.setVisible(False)
         
         self.upscale_radio_group = QtWidgets.QButtonGroup(self)
-        self.upscale_radio_720p = QRadioButton("720p")
-        self.upscale_radio_1080p = QRadioButton("1080p")
-        self.upscale_radio_4k = QRadioButton("4k")
-        self.upscale_radio_8k = QRadioButton("8k")
-        self.upscale_radio_group.addButton(self.upscale_radio_720p, 1280)
-        self.upscale_radio_group.addButton(self.upscale_radio_1080p, 1920)
-        self.upscale_radio_group.addButton(self.upscale_radio_4k, 3840)
-        self.upscale_radio_group.addButton(self.upscale_radio_8k, 7680)
-        self.upscale_radio_720p.setChecked(True)
-        self.upscale_radio_720p.setVisible(False)
-        self.upscale_radio_1080p.setVisible(False)
-        self.upscale_radio_4k.setVisible(False)
-        self.upscale_radio_8k.setVisible(False)
+        self.upscale_radio_1x = QRadioButton("1x")
+        self.upscale_radio_2x = QRadioButton("2x")
+        self.upscale_radio_3x = QRadioButton("3x")
+        self.upscale_radio_4x = QRadioButton("4x")
+        self.upscale_radio_group.addButton(self.upscale_radio_1x, 1)
+        self.upscale_radio_group.addButton(self.upscale_radio_2x, 2)
+        self.upscale_radio_group.addButton(self.upscale_radio_3x, 3)
+        self.upscale_radio_group.addButton(self.upscale_radio_4x, 4)
+        self.upscale_radio_1x.setChecked(True)
+        self.upscale_radio_1x.setVisible(False)
+        self.upscale_radio_2x.setVisible(False)
+        self.upscale_radio_3x.setVisible(False)
+        self.upscale_radio_4x.setVisible(False)
+        self.upscale_warning = QLabel("Using upscaling will drastically increase rendering time!")
+        self.upscale_warning.setStyleSheet("color: red; border-color: white;")
+        self.upscale_warning.setVisible(False)
+        self.upscale_warning.setMaximumHeight(25)
+        self.upscale_warning.setMinimumWidth(340)
         
         self.config_layout.addWidget(self.model_text, 0, 0, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.model_combo, 0, 2, 2, 1, Qt.AlignTop)
@@ -200,11 +220,28 @@ class MyWindow(QMainWindow):
         self.config_layout.addWidget(self.descale_spinner, 5, 2, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.upscale_checkbox, 6, 0, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.upscale_model, 6, 2, 2, 1, Qt.AlignTop)
-        self.config_layout.addWidget(self.upscale_radio_720p, 7, 0, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_1080p, 7, 1, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_4k, 7, 2, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_8k, 7, 3, 1, 1, Qt.AlignCenter)  
+        self.config_layout.addWidget(self.upscale_radio_1x, 7, 0, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_2x, 7, 1, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_3x, 7, 2, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_4x, 7, 3, 1, 1, Qt.AlignLeft)  
+        self.config_layout.addWidget(self.upscale_warning, 8, 0, -1, 1, Qt.AlignCenter)
+        
+        self.config_layout.setVerticalSpacing(25)
+        self.config_layout.setColumnStretch(0, 1)
+        self.config_layout.setColumnStretch(1, 1)
+        self.config_layout.setColumnStretch(2, 1)
+        self.config_layout.setColumnStretch(3, 1)
+        self.config_layout.setRowStretch(0, 3)
+        self.config_layout.setRowStretch(1, 3)
+        self.config_layout.setRowStretch(2, 3)
+        self.config_layout.setRowStretch(3, 3)
+        self.config_layout.setRowStretch(4, 3)
+        self.config_layout.setRowStretch(5, 3)
+        self.config_layout.setRowStretch(6, 3)
+        self.config_layout.setRowStretch(7, 3)
+        self.config_layout.setRowStretch(8, 0)
 
+        self.config_box.setGeometry(20, 70, 360, 375)
         self.config_box.setLayout(self.config_layout)
         
         #prompts group
@@ -215,10 +252,14 @@ class MyWindow(QMainWindow):
         self.positive_prompt_text = QLabel("Positive Prompts: ", self)
         self.positive_prompt_text.setMinimumHeight(40)
         self.positive_prompt = QTextEdit(self)
+        if self.settings.contains("positive_prompt"):
+            self.positive_prompt.setText(self.settings.value("positive_prompt"))
         self.positive_prompt.setMinimumHeight(40)
         self.negative_prompt_text = QLabel("Negative Prompts:", self)
         self.negative_prompt_text.setMinimumHeight(40)
         self.negative_prompt = QTextEdit(self)
+        if self.settings.contains("negative_prompt"):
+            self.negative_prompt.setText(self.settings.value("negative_prompt"))
         self.negative_prompt.setMinimumHeight(40)
         
         self.prompt_layout.addRow(self.positive_prompt_text, self.positive_prompt)
@@ -239,6 +280,14 @@ class MyWindow(QMainWindow):
         self.startButton.clicked.connect(self.startClicked)
         self.startButton.setEnabled(False)
         self.startButton.setToolTip("Initiate the conversion process")
+        
+        self.cancelButton = QPushButton(self)
+        self.cancelButton.setText("Cancel")
+        self.cancelButton.move((int)(200 - (self.cancelButton.frameGeometry().width())/2), 660)
+        self.cancelButton.clicked.connect(self.cancelClicked)
+        self.cancelButton.setEnabled(False)
+        self.cancelButton.setVisible(False)
+        self.cancelButton.setToolTip("Cancel the conversion process")
 
         #split progress widgets
         self.split_prog_gif = QMovie("assets\\loading.gif")
@@ -294,37 +343,51 @@ class MyWindow(QMainWindow):
         self.stitch_prog_done.setVisible(False)
         self.stitch_prog_text = QLabel(self)
         self.stitch_prog_text.setGeometry(160, 820, 200, 20)
-        self.stitch_prog_text.setText("Stiching the video back together...")
+        self.stitch_prog_text.setText("Stiching video back together...")
         self.stitch_prog_text.setVisible(False)
         
         if len(os.listdir("../generatedFrames")) > 1:
             self.recoverDetected()
+        
+        self.auto1111check()
 
+    def auto1111check(self):
+        try:
+            html = urlopen("http://127.0.0.1:7860/sdapi/v1/img2imgmm")
+        except URLError:
+            a1111dlg = QMessageBox()
+            a1111dlg.setWindowTitle("Error - Automatic 1111 Not Found!")
+            a1111dlg.setIcon(QMessageBox.Critical)
+            a1111dlg.setText("Automatic 1111 is either not running or not running in api mode.\nIf not running go to your automatic1111 root directory and run run.bat\nIf it is running then please add --api to COMMANDLINE-ARGS in automatic1111/webui/webui-user.bat and run it again")
+            a1111dlg.exec_()
+    
     def upscale_checked(self):
         if self.upscale_checkbox.isChecked() == True:
-            self.setFixedSize(400, 910)
-            self.config_box.setGeometry(20, 70, 360, 425)
-            self.prompt_box.setGeometry(20, 515, 360, 180)
-            self.start_line.setGeometry(20, 720, 360, 10)
-            self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 710)
-            self.split_prog_loading.setGeometry(115, 755, 30, 30)
-            self.split_prog_done.setGeometry(120, 760, 20, 20)
-            self.split_prog_text.setGeometry(160, 760, 200, 20)
-            self.gen_prog_loading.setGeometry(115, 810, 30, 30)
-            self.gen_prog_done.setGeometry(120, 815, 20, 20)
-            self.gen_prog_text.setGeometry(160, 815, 200, 20)
-            self.stitch_prog_loading.setGeometry(110, 865, 30, 30)
-            self.stitch_prog_done.setGeometry(120, 870, 20, 20)
-            self.stitch_prog_text.setGeometry(160, 870, 200, 20)
+            self.setFixedSize(400, 950)
+            self.move(100, 25)
+            self.config_box.setGeometry(20, 70, 360, 475)
+            self.prompt_box.setGeometry(20, 565, 360, 180)
+            self.start_line.setGeometry(20, 770, 360, 10)
+            self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 760)
+            self.split_prog_loading.setGeometry(115, 805, 30, 30)
+            self.split_prog_done.setGeometry(120, 810, 20, 20)
+            self.split_prog_text.setGeometry(160, 810, 200, 20)
+            self.gen_prog_loading.setGeometry(115, 860, 30, 30)
+            self.gen_prog_done.setGeometry(120, 865, 20, 20)
+            self.gen_prog_text.setGeometry(160, 865, 200, 20)
+            self.stitch_prog_loading.setGeometry(110, 915, 30, 30)
+            self.stitch_prog_done.setGeometry(120, 920, 20, 20)
+            self.stitch_prog_text.setGeometry(160, 920, 200, 20)
             self.upscale_model.setVisible(True)
-            self.upscale_radio_720p.setVisible(True)
-            self.upscale_radio_1080p.setVisible(True)
-            self.upscale_radio_4k.setVisible(True)
-            self.upscale_radio_8k.setVisible(True)
+            self.upscale_radio_1x.setVisible(True)
+            self.upscale_radio_2x.setVisible(True)
+            self.upscale_radio_3x.setVisible(True)
+            self.upscale_radio_4x.setVisible(True)
+            self.upscale_warning.setVisible(True)
             
-            print(self.upscale_radio_group.checkedId())
         else:
             self.setFixedSize(400, 860)
+            self.move(100, 50)
             self.config_box.setGeometry(20, 70, 360, 375)
             self.prompt_box.setGeometry(20, 465, 360, 180)
             self.start_line.setGeometry(20, 670, 360, 10)
@@ -339,10 +402,11 @@ class MyWindow(QMainWindow):
             self.stitch_prog_done.setGeometry(120, 820, 20, 20)
             self.stitch_prog_text.setGeometry(160, 820, 200, 20)
             self.upscale_model.setVisible(False)
-            self.upscale_radio_720p.setVisible(False)
-            self.upscale_radio_1080p.setVisible(False)
-            self.upscale_radio_4k.setVisible(False)
-            self.upscale_radio_8k.setVisible(False)
+            self.upscale_radio_1x.setVisible(False)
+            self.upscale_radio_2x.setVisible(False)
+            self.upscale_radio_3x.setVisible(False)
+            self.upscale_radio_4x.setVisible(False)
+            self.upscale_warning.setVisible(False)
 
 
     def uploadClicked(self): 
@@ -382,25 +446,29 @@ class MyWindow(QMainWindow):
             errdlg.exec_()
             return
         if self.__file is not None:
-            self.split_prog_done.setVisible(False)
-            self.split_prog_text.setVisible(False)
-            self.split_prog_text.setText("Splitting frames...")
-            self.split_prog_text.setStyleSheet("color: rgba(56, 189, 248, 1);")
-            self.gen_prog_done.setVisible(False)
-            self.gen_prog_text.setVisible(False)
-            self.gen_prog_text.setText("Generating frames...")
-            self.gen_prog_text.setStyleSheet("color: rgba(56, 189, 248, 1);")
-            self.stitch_prog_done.setVisible(False)
-            self.stitch_prog_text.setVisible(False)
-            self.stitch_prog_text.setText("Stitching the video back together...")
-            self.stitch_prog_text.setStyleSheet("color: rgba(56, 189, 248, 1);")
-            
-            
             self.start_thread = QThread(self)
             self.start_worker = Worker(self.splitFrames)
             self.start_worker.moveToThread(self.start_thread)
             self.start_thread.started.connect(self.start_worker.run)
             self.start_thread.start()
+            self.startButton.setVisible(False)
+            self.startButton.setEnabled(False)
+            self.cancelButton.setVisible(True)
+            self.cancelButton.setEnabled(True)
+            
+            self.settings.setValue("positive_prompt", self.positive_prompt.toPlainText())
+            self.settings.setValue("negative_prompt", self.negative_prompt.toPlainText())    
+            self.settings.setValue("model", self.model_combo.currentText())
+            self.settings.setValue("sampler", self.sampler_combo.currentText())
+            self.settings.setValue("steps", self.steps_spinner.value())
+            self.settings.setValue("cfg", self.cfg_spinner.value())
+            self.settings.setValue("denoise", self.denoise_spinner.value())
+            self.settings.setValue("descale", self.descale_spinner.value())
+            self.settings.sync()
+            
+      
+    def cancelClicked(self):
+        os.execl(sys.executable, *sys.orig_argv) 
                 
     def splitFrames(self):
         self.split_prog_loading.setVisible(True)
@@ -430,7 +498,7 @@ class MyWindow(QMainWindow):
             prompt_n = ""
         else:
             prompt_n = self.negative_prompt.toPlainText() 
-            
+               
         modelName = self.model_combo.currentText()
         sampler = self.sampler_combo.currentText()
         steps = self.steps_spinner.value()
@@ -447,9 +515,9 @@ class MyWindow(QMainWindow):
         self.genFinished()
     
     def genFinished(self):
-        self.gen_prog_gif.stop()
-        self.gen_prog_loading.setVisible(False)
-        self.gen_prog_done.setVisible(True)
+        self.split_prog_gif.stop()
+        self.split_prog_loading.setVisible(False)
+        self.split_prog_done.setVisible(True)
         self.gen_prog_text.setText("Finished Generating Frames!")
         self.gen_prog_text.setStyleSheet("color: green")
     
@@ -458,7 +526,7 @@ class MyWindow(QMainWindow):
         self.stitch_prog_gif.start()
         self.stitch_prog_text.setVisible(True)
         animated_video_name = self.__file.split("/")[-1].split(".")[0]
-        stitcher.stitch_frames(animated_video_name, self.__file)
+        stitcher.stitch_frames(animated_video_name)
         self.stitchFinished()
     
     def stitchFinished(self):
