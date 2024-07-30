@@ -79,7 +79,7 @@ def create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, 
     
     return payload
     
-def create_upscale_payload(positive, negative, imagePath, model_name, sampler, upscale_width):
+def create_upscale_payload(positive, negative, imagePath, model_name, sampler, upscale_value):
     init_images = [
         encode_file_to_base64(imagePath)
     ]
@@ -87,8 +87,13 @@ def create_upscale_payload(positive, negative, imagePath, model_name, sampler, u
     temp_img = Image.open(imagePath)
     
     img_width = temp_img.width
-
-    upscale_quotient = upscale_width/img_width
+    img_height = temp_img.height
+    upscale_quotient = 0
+    
+    if img_width > img_height:
+        upscale_quotient = upscale_value/img_width
+    else:
+        upscale_quotient = upscale_value/img_height
     
     payload = {
         "sd_model_checkpoint":model_name,
