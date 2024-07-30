@@ -198,10 +198,10 @@ class MyWindow(QMainWindow):
         self.upscale_radio_1080p = QRadioButton("1080p")
         self.upscale_radio_4k = QRadioButton("4K")
         self.upscale_radio_8k = QRadioButton("8K")
-        self.upscale_radio_group.addButton(self.upscale_radio_720p, 1)
-        self.upscale_radio_group.addButton(self.upscale_radio_1080p, 2)
-        self.upscale_radio_group.addButton(self.upscale_radio_4k, 3)
-        self.upscale_radio_group.addButton(self.upscale_radio_8k, 4)
+        self.upscale_radio_group.addButton(self.upscale_radio_720p, 1260)
+        self.upscale_radio_group.addButton(self.upscale_radio_1080p, 1920)
+        self.upscale_radio_group.addButton(self.upscale_radio_4k, 3840)
+        self.upscale_radio_group.addButton(self.upscale_radio_8k, 7680)
         self.upscale_radio_720p.setVisible(False)
         self.upscale_radio_1080p.setVisible(False)
         self.upscale_radio_4k.setVisible(False)
@@ -213,13 +213,13 @@ class MyWindow(QMainWindow):
         self.upscale_warning.setMinimumWidth(340)
         
         if self.settings.contains("upscale_resolution"):
-            if int(self.settings.value("upscale_resolution")) == 1:
+            if int(self.settings.value("upscale_resolution")) == 1280:
                 self.upscale_radio_720p.setChecked(True)
-            elif int(self.settings.value("upscale_resolution")) == 2:
+            elif int(self.settings.value("upscale_resolution")) == 1920:
                 self.upscale_radio_1080p.setChecked(True)
-            elif int(self.settings.value("upscale_resolution")) == 3:
+            elif int(self.settings.value("upscale_resolution")) == 3840:
                 self.upscale_radio_4k.setChecked(True)
-            elif int(self.settings.value("upscale_resolution")) == 4:
+            elif int(self.settings.value("upscale_resolution")) == 7680:
                 self.upscale_radio_8k.setChecked(True)
             else:
                 self.upscale_radio_720p.setChecked(True)    
