@@ -44,21 +44,21 @@ class MyWindow(QMainWindow):
         self.__file = None
         self.__frame_total = 0
         self.__recover_frame = 1
-        print(self.settings.isWritable())
         self.initUI()
 
     def initUI(self): 
         #add widget 
         mainWindow = QWidget()
         self.setCentralWidget(mainWindow)
-
+        
         #create a vertical layout: upload - config - prompts - start - properties
         VLayout = QVBoxLayout()
         mainWindow.setLayout(VLayout)
-
+        
         #creat a horizontal layout for upload and config buttons
         HLayout = QHBoxLayout()
         mainWindow.setLayout(HLayout)
+
 
         #upload cosmetic line
         self.upload_line = QFrame(self)
@@ -98,7 +98,7 @@ class MyWindow(QMainWindow):
         self.descale_text.setMinimumHeight(40)
         self.descale_text.setMinimumWidth(180)
   
-        self.models = os.listdir("C:\AI_SD\webui\models\Stable-diffusion")
+        self.models = os.listdir("../config/Models")#("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
         self.samplers = ["Euler a", "Euler", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
@@ -173,7 +173,11 @@ class MyWindow(QMainWindow):
         self.descale_spinner.setToolTip("The scale of the generated frames.")
         
         self.upscale_checkbox = QCheckBox("Upscale?", self)
-        self.upscale_checkbox.setChecked(False)
+        if self.settings.contains("upscale_checked"):
+            if self.settings.value("upscale_checked") == "true":
+                self.upscale_checkbox.setChecked(True)
+            if self.settings.value("upscale_checked") == "false":
+                self.upscale_checkbox.setChecked(False)
         self.upscale_checkbox.stateChanged.connect(self.upscale_checked)
         self.upscale_checkbox.setMinimumHeight(40)
         
@@ -182,29 +186,45 @@ class MyWindow(QMainWindow):
         for i in range(0,len(self.models)-1):
             tooltip = self.upscale_model.itemText(i)
             self.upscale_model.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+        if self.settings.contains("upscale_model"):
+            if self.settings.value("upscale_model") in self.models:                 
+                self.upscale_model.setCurrentIndex(self.models.index(self.settings.value("upscale_model")))
         self.upscale_model.setMinimumHeight(40)
         self.upscale_model.setMinimumWidth(160)
         self.upscale_model.setVisible(False)
         
         self.upscale_radio_group = QtWidgets.QButtonGroup(self)
-        self.upscale_radio_1x = QRadioButton("1x")
-        self.upscale_radio_2x = QRadioButton("2x")
-        self.upscale_radio_3x = QRadioButton("3x")
-        self.upscale_radio_4x = QRadioButton("4x")
-        self.upscale_radio_group.addButton(self.upscale_radio_1x, 1)
-        self.upscale_radio_group.addButton(self.upscale_radio_2x, 2)
-        self.upscale_radio_group.addButton(self.upscale_radio_3x, 3)
-        self.upscale_radio_group.addButton(self.upscale_radio_4x, 4)
-        self.upscale_radio_1x.setChecked(True)
-        self.upscale_radio_1x.setVisible(False)
-        self.upscale_radio_2x.setVisible(False)
-        self.upscale_radio_3x.setVisible(False)
-        self.upscale_radio_4x.setVisible(False)
+        self.upscale_radio_720p = QRadioButton("720p")
+        self.upscale_radio_1080p = QRadioButton("1080p")
+        self.upscale_radio_4k = QRadioButton("4K")
+        self.upscale_radio_8k = QRadioButton("8K")
+        self.upscale_radio_group.addButton(self.upscale_radio_720p, 1)
+        self.upscale_radio_group.addButton(self.upscale_radio_1080p, 2)
+        self.upscale_radio_group.addButton(self.upscale_radio_4k, 3)
+        self.upscale_radio_group.addButton(self.upscale_radio_8k, 4)
+        self.upscale_radio_720p.setVisible(False)
+        self.upscale_radio_1080p.setVisible(False)
+        self.upscale_radio_4k.setVisible(False)
+        self.upscale_radio_8k.setVisible(False)
         self.upscale_warning = QLabel("Using upscaling will drastically increase rendering time!")
         self.upscale_warning.setStyleSheet("color: red; border-color: white;")
         self.upscale_warning.setVisible(False)
         self.upscale_warning.setMaximumHeight(25)
         self.upscale_warning.setMinimumWidth(340)
+        
+        if self.settings.contains("upscale_resolution"):
+            if int(self.settings.value("upscale_resolution")) == 1:
+                self.upscale_radio_720p.setChecked(True)
+            elif int(self.settings.value("upscale_resolution")) == 2:
+                self.upscale_radio_1080p.setChecked(True)
+            elif int(self.settings.value("upscale_resolution")) == 3:
+                self.upscale_radio_4k.setChecked(True)
+            elif int(self.settings.value("upscale_resolution")) == 4:
+                self.upscale_radio_8k.setChecked(True)
+            else:
+                self.upscale_radio_720p.setChecked(True)    
+        else:
+            self.upscale_radio_720p.setChecked(True)                
         
         self.config_layout.addWidget(self.model_text, 0, 0, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.model_combo, 0, 2, 2, 1, Qt.AlignTop)
@@ -220,10 +240,10 @@ class MyWindow(QMainWindow):
         self.config_layout.addWidget(self.descale_spinner, 5, 2, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.upscale_checkbox, 6, 0, 2, 1, Qt.AlignTop)
         self.config_layout.addWidget(self.upscale_model, 6, 2, 2, 1, Qt.AlignTop)
-        self.config_layout.addWidget(self.upscale_radio_1x, 7, 0, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_2x, 7, 1, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_3x, 7, 2, 1, 1, Qt.AlignCenter)
-        self.config_layout.addWidget(self.upscale_radio_4x, 7, 3, 1, 1, Qt.AlignLeft)  
+        self.config_layout.addWidget(self.upscale_radio_720p, 7, 0, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_1080p, 7, 1, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_4k, 7, 2, 1, 1, Qt.AlignCenter)
+        self.config_layout.addWidget(self.upscale_radio_8k, 7, 3, 1, 1, Qt.AlignLeft)  
         self.config_layout.addWidget(self.upscale_warning, 8, 0, -1, 1, Qt.AlignCenter)
         
         self.config_layout.setVerticalSpacing(25)
@@ -343,11 +363,14 @@ class MyWindow(QMainWindow):
         self.stitch_prog_done.setVisible(False)
         self.stitch_prog_text = QLabel(self)
         self.stitch_prog_text.setGeometry(160, 820, 200, 20)
-        self.stitch_prog_text.setText("Stiching video back together...")
+        self.stitch_prog_text.setText("Stiching the video back together...")
         self.stitch_prog_text.setVisible(False)
         
         if len(os.listdir("../generatedFrames")) > 1:
             self.recoverDetected()
+        
+        if self.upscale_checkbox.isChecked() is True:
+            self.upscale_checked()
         
         self.auto1111check()
 
@@ -379,10 +402,10 @@ class MyWindow(QMainWindow):
             self.stitch_prog_done.setGeometry(120, 920, 20, 20)
             self.stitch_prog_text.setGeometry(160, 920, 200, 20)
             self.upscale_model.setVisible(True)
-            self.upscale_radio_1x.setVisible(True)
-            self.upscale_radio_2x.setVisible(True)
-            self.upscale_radio_3x.setVisible(True)
-            self.upscale_radio_4x.setVisible(True)
+            self.upscale_radio_720p.setVisible(True)
+            self.upscale_radio_1080p.setVisible(True)
+            self.upscale_radio_4k.setVisible(True)
+            self.upscale_radio_8k.setVisible(True)
             self.upscale_warning.setVisible(True)
             
         else:
@@ -402,10 +425,10 @@ class MyWindow(QMainWindow):
             self.stitch_prog_done.setGeometry(120, 820, 20, 20)
             self.stitch_prog_text.setGeometry(160, 820, 200, 20)
             self.upscale_model.setVisible(False)
-            self.upscale_radio_1x.setVisible(False)
-            self.upscale_radio_2x.setVisible(False)
-            self.upscale_radio_3x.setVisible(False)
-            self.upscale_radio_4x.setVisible(False)
+            self.upscale_radio_720p.setVisible(False)
+            self.upscale_radio_1080p.setVisible(False)
+            self.upscale_radio_4k.setVisible(False)
+            self.upscale_radio_8k.setVisible(False)
             self.upscale_warning.setVisible(False)
 
 
@@ -464,6 +487,9 @@ class MyWindow(QMainWindow):
             self.settings.setValue("cfg", self.cfg_spinner.value())
             self.settings.setValue("denoise", self.denoise_spinner.value())
             self.settings.setValue("descale", self.descale_spinner.value())
+            self.settings.setValue("upscale_checked", self.upscale_checkbox.isChecked())
+            self.settings.setValue("upscale_model", self.upscale_model.currentText())
+            self.settings.setValue("upscale_resolution", self.upscale_radio_group.checkedId())
             self.settings.sync()
             
       
@@ -515,9 +541,9 @@ class MyWindow(QMainWindow):
         self.genFinished()
     
     def genFinished(self):
-        self.split_prog_gif.stop()
-        self.split_prog_loading.setVisible(False)
-        self.split_prog_done.setVisible(True)
+        self.gen_prog_gif.stop()
+        self.gen_prog_loading.setVisible(False)
+        self.gen_prog_done.setVisible(True)
         self.gen_prog_text.setText("Finished Generating Frames!")
         self.gen_prog_text.setStyleSheet("color: green")
     
@@ -526,7 +552,7 @@ class MyWindow(QMainWindow):
         self.stitch_prog_gif.start()
         self.stitch_prog_text.setVisible(True)
         animated_video_name = self.__file.split("/")[-1].split(".")[0]
-        stitcher.stitch_frames(animated_video_name)
+        stitcher.stitch_frames(animated_video_name, self.__file)
         self.stitchFinished()
     
     def stitchFinished(self):
