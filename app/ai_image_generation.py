@@ -136,7 +136,8 @@ if __name__ == '__main__':
     sampler = "Euler a"
     denoise = 0.40
     descale = 0.5
+    upscale_value = 7680
     
     
-    generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, True, upscale_name)
+    generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, True, upscale_name, upscale_value)
     
