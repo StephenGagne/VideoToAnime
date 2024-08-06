@@ -23,7 +23,8 @@ You can find other installation guides at [Automatic1111 webui github](https://g
 2. Edit directory.py SDDIR="`Your Automatic1111 webui model directory`" example=`C:\AnimateXpress\sd.webui\webui\models\Stable-diffusion`
 3. Move any Stable Diffusion models you plan on using into the Automatic1111 webui model directory
 4. Change the Stable Diffusion Checkpoint in the webui found in the top left of `http://127.0.0.1:7860/` to your desired style
-5. Run `ui.py`
+5. Ensure that Automatic1111 webui is running with `COMMANDLINE_ARGS= --api` in webui-user.bat
+6. Run `ui.py`
 
 # Using AnimateXpress
 1. Upload a Video
