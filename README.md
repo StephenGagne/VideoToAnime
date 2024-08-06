@@ -16,14 +16,15 @@ You can find other installation guides at [Automatic1111 webui github](https://g
 4. Install pip `python -m ensurepip`
 5. Update pip `pip install --upgrade pip`
 6. Run `pip install -r requirements.txt`
-7. Move into the `app` directory
-8. Edit directory.py SDDIR="`Your Automatic1111 webui model directory`" example=`C:\AnimateXpress\sd.webui\webui\models\Stable-diffusion`
-9. Move any Stable Diffusion models you plan on using into the Automatic1111 webui model directory
+7. Navigate to the `app` directory
+8. Edit directory.py SDDIR="`Your Automatic1111 webui model directory`"
+9. Move any Stable Diffusion models you plan on using into the Automatic1111 webui model directory 
+- Automatic1111 model directory example: `C:\sd.webui\webui\models\Stable-diffusion`
 
 # Running AnimateXpress
 1. Run Automatic1111 webui with `run.bat`
-2. Run AnimateXpress `ui.py`
-3. Change the Stable Diffusion Checkpoint in the webui found in the top left of `http://127.0.0.1:7860/` to your desired style
+2. Run AnimateXpress with `start.bat`
+3. Change the Stable Diffusion Checkpoint in the webui found in the top left of [Automatic1111](http://127.0.0.1:7860/) to your desired style
 
 # Using AnimateXpress
 1. Upload a Video
@@ -31,3 +32,18 @@ You can find other installation guides at [Automatic1111 webui github](https://g
 3. Change settings to the recommended settings for that model. Usually found on the download page.
 4. Input a positive and negative prompt
 5. Click Generate Video
+
+# Settings Definitions
+- Model: 			A Stable Diffusion model used to generate the new images
+- Sampler: 		The sampler used to predict how to generate the new images
+- Steps: 			The number of samples that each images needs to generate
+- CFG: 			How creative the AI model is allowed to be (Lower = More creative)
+- Denoise: 		How close to the original image the generated image will be (Lower = Closer to the original)
+- Descale: 		Will reduce the dimensions of the input video. 0.50 = 50% of the original video
+- Upscale:			Will increase the scale of the video in either 720p, 1080p, 4K or 8K
+- Positive Prompt: This is what the AI will use to determine what to generate (What you expect to be in your generated video)
+- Negative Prompt: This is what you want to avoid being in your video
+
+# Prompt Examples
+- Positive Prompt: (best quality, masterpiece), a white man with brown short hair and a brown beard
+- Negative Prompt: (worst quality, low quality, letterboxed)
