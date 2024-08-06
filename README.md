@@ -24,7 +24,7 @@ You can find other installation guides at [Automatic1111 webui github](https://g
 # Running AnimateXpress
 1. Run Automatic1111 webui with `run.bat`
 2. Run AnimateXpress with `start.bat`
-3. Change the Stable Diffusion Checkpoint in the webui found in the top left of `http://127.0.0.1:7860/` to your desired style
+3. Change the Stable Diffusion Checkpoint in the webui found in the top left of [Automatic1111](http://127.0.0.1:7860/) to your desired style
 
 # Using AnimateXpress
 1. Upload a Video
