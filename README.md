@@ -17,8 +17,9 @@ You can find other installation guides at [Automatic1111 webui github](https://g
 5. Update pip `pip install --upgrade pip`
 6. Run `pip install -r requirements.txt`
 7. Navigate to the `app` directory
-8. Edit directory.py SDDIR="`Your Automatic1111 webui model directory`" example=`C:\AnimateXpress\sd.webui\webui\models\Stable-diffusion`
-9. Move any Stable Diffusion models you plan on using into the Automatic1111 webui model directory
+8. Edit directory.py SDDIR="`Your Automatic1111 webui model directory`"
+9. Move any Stable Diffusion models you plan on using into the Automatic1111 webui model directory 
+- Automatic1111 model directory example: `C:\AnimateXpress\sd.webui\webui\models\Stable-diffusion`
 
 # Running AnimateXpress
 1. Run Automatic1111 webui with `run.bat`
