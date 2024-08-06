@@ -12,7 +12,7 @@ webui_server_url = 'http://localhost:7860'
 out_dir = '../'
 out_dir_i2i = os.path.join(out_dir, 'generatedFrames')
 os.makedirs(out_dir_i2i, exist_ok=True)
-inputDir = "C:\\VideoToAnime\\originalFrames\\"
+inputDir = "../originalFrames/"
 
 
 def timestamp():

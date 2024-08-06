@@ -32,6 +32,7 @@ import frame_stitcher as stitcher
 from cleanup import cleanup
 from urllib.request import urlopen
 from urllib.error import *
+from directory import *
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -98,7 +99,7 @@ class MyWindow(QMainWindow):
         self.descale_text.setMinimumHeight(40)
         self.descale_text.setMinimumWidth(180)
   
-        self.models = os.listdir("C:\\AI_SD\\webui\\models\\Stable-diffusion")#("C:\AI_SD\webui\models\Stable-diffusion")
+        self.models = os.listdir(SDDIR)#("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
         self.samplers = ["Euler a", "Euler", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]

@@ -1,0 +1,4 @@
+moviepy==1.0.3
+Pillow==10.4.0
+PyQt5==5.15.11
+opencv-python
