@@ -5,8 +5,7 @@ import os
 def extract_audio(video_name):
     # Ensure the input file exists
     input_video_path = video_name
-    project_root = os.path.abspath(os.path.join(os.path.dirname(input_video_path), '..'))
-    output_audio_dir = os.path.join(project_root, 'audio')
+    output_audio_dir = "../audio/"
     output_audio_path = os.path.join(output_audio_dir, f"{os.path.splitext(os.path.basename(video_name))[0]}.mp3")
 
     if not os.path.exists(input_video_path):

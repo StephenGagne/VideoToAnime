@@ -22,7 +22,7 @@ You can find other installation guides at [Automatic1111 webui github](https://g
 
 # Running AnimateXpress
 1. Run Automatic1111 webui with `run.bat`
-2. Run AnimateXpress `ui.py`
+2. Run AnimateXpress `app/ui.py`
 3. Change the Stable Diffusion Checkpoint in the webui found in the top left of `http://127.0.0.1:7860/` to your desired style
 
 # Using AnimateXpress
@@ -31,3 +31,14 @@ You can find other installation guides at [Automatic1111 webui github](https://g
 3. Change settings to the recommended settings for that model. Usually found on the download page.
 4. Input a positive and negative prompt
 5. Click Generate Video
+
+# Settings Definitions
+1. Model: 			A Stable Diffusion model used to generate the new images
+2. Sampler: 		The sampler used to predict how to generate the new images
+3. Steps: 			The number of samples that each images needs to generate
+4. CFG: 			How creative the AI model is allowed to be (Lower = More creative)
+5. Denoise: 		How close to the original image the generated image will be (Lower = Closer to the original)
+6. Descale: 		Will reduce the dimensions of the input video. 0.50 = 50% of the original video
+7. Upscale:			Will increase the scale of the video in either 720p, 1080p, 4K or 8K
+8. Positive Prompt: This is what the AI will use to determine what to generate (What you expect to be in your generated video)
+9. Negative Prompt: This is what you want to avoid being in your video
