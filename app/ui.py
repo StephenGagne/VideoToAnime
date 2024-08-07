@@ -1,37 +1,20 @@
-"""
-This script implement PyQt5 GUI application for uploading
-and displaying video using OpenCV
-Author: Zachary and Vy 
-Date: 2024-07-16
-"""
-
-'''
-Current known issues:
-- *Some* widget geometry is hard-coded, should be programmatically determined?
-- Potential geometry issues on very small and very large displays
-- Widgets outside of layout boxes are a headache to adjust geometry
-'''
-'''
-Future Plans:
-- Add preset style themes (light mode, dark mode?)
-'''
-
+# System Imports
 import sys
-import time
-from pathlib import Path
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QProgressBar, QLabel, QTextEdit, QMessageBox, QDialog, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox, QDoubleSpinBox, QCheckBox, QRadioButton
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QPixmap, QMovie, QIcon
-import cv2 as cv #import OpenCV library
 import os
-from importlib.metadata import version
+from pathlib import Path
+from urllib.request import urlopen
+from urllib.error import *
+# Dependency Imports
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import Qt, QObject, QThread, QSettings
+from PyQt5.QtGui import QPixmap, QMovie, QIcon
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QFormLayout, QApplication, QMainWindow, QFileDialog, QLabel, QTextEdit, QMessageBox, QComboBox, QSpinBox, QPushButton, QFrame, QGroupBox, QDoubleSpinBox, QCheckBox, QRadioButton
+import cv2 as cv
+# Custom Imports
 import video_splitter
 import ai_image_generation as img_gen
 import frame_stitcher as stitcher
 from cleanup import cleanup
-from urllib.request import urlopen
-from urllib.error import *
 from directory import *
 
 class MyWindow(QMainWindow):
@@ -47,35 +30,48 @@ class MyWindow(QMainWindow):
         self.__recover_frame = 1
         self.initUI()
 
+##
+# - UI Initialisation Function -
+# Establishes the widget framework
+# and connects the signals and slots
+# used to link components
+# to their respective functions
+##
     def initUI(self): 
-        #add widget 
         mainWindow = QWidget()
         self.setCentralWidget(mainWindow)
         
-        #create a vertical layout: upload - config - prompts - start - properties
         VLayout = QVBoxLayout()
         mainWindow.setLayout(VLayout)
-        
-        #creat a horizontal layout for upload and config buttons
         HLayout = QHBoxLayout()
         mainWindow.setLayout(HLayout)
 
-
-        #upload cosmetic line
+        ##
+        # - Upload Button Components -
+        # Contains the cosmetic line passing through
+        # the upload button, the button itself, and
+        # the upload button text label.
+        ##
         self.upload_line = QFrame(self)
         self.upload_line.setGeometry(20, 30, 360, 10)
         self.upload_line.setStyleSheet("color: rgba(56, 189, 248, 1);")
         self.upload_line.setFrameShape(QFrame.HLine)
         self.upload_line.setLineWidth(3)
 
-        #upload button
         self.uploadButton = QPushButton(self)
         self.uploadButton.setText("Upload Video")
         self.uploadButton.move((int)(200 - (self.uploadButton.frameGeometry().width())/2), 20)
         self.uploadButton.clicked.connect(self.uploadClicked)
         self.uploadButton.setToolTip("Upload a video to be processed")
 
-        #config 
+        ##
+        # - Configuration Box and Contained Widgets - 
+        # Contains the box framework, configuration widgets
+        # (model, sampler, and upscale model dropdowns, 
+        # steps, cfg, denoise, and descale spinners,
+        # upscale checkbox and radio buttons) and their 
+        # corresponding text labels.
+        ##
         self.config_box = QGroupBox("Model Configuration", self)
         self.config_layout = QGridLayout(self)
         self.config_layout.setOriginCorner(Qt.TopLeftCorner)
@@ -99,7 +95,7 @@ class MyWindow(QMainWindow):
         self.descale_text.setMinimumHeight(40)
         self.descale_text.setMinimumWidth(180)
   
-        self.models = os.listdir(SDDIR)#("C:\AI_SD\webui\models\Stable-diffusion")
+        self.models = os.listdir("..\config\Models")#(SDDIR)#("C:\AI_SD\webui\models\Stable-diffusion")
         for idx, model in enumerate(self.models):
             self.models[idx] = self.models[idx].split("/")[-1].rsplit(".")[0]
         self.samplers = ["Euler a", "Euler", "DPM++ 2M Karras", "DPM++ SDE Karras", "DPM++ 2M SDE Exponential", "DPM++ 2M SDE Karras", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ SDE", "DPM++ 2M SDE", "DPM++ 2M SDE Heun", "DPM++ 2M SDE Heun Karras", "DPM++ 2M SDE Heun Exponential", "DPM++ 3M SDE", "DPM++ 3M SDE Karras", "DPM++ 3M SDE Exponential", "DPM fast", "DPM adaptive", "LMS Karras", "DPM2 Karras", "DPM2 a Karras", "DPM++ 2S a Karras", "Restart", "DDIM", "PLMS", "UniPC", "LCM"]
@@ -114,6 +110,7 @@ class MyWindow(QMainWindow):
                 self.model_combo.setCurrentIndex(self.models.index(self.settings.value("model")))
         self.model_combo.setMinimumHeight(40)
         self.model_combo.setMinimumWidth(160)
+        self.model_combo.setToolTip("Select the model used for the image generation.")
         
         self.sampler_combo = QComboBox(self)
         self.sampler_combo.addItems(self.samplers)
@@ -124,6 +121,7 @@ class MyWindow(QMainWindow):
             self.sampler_combo.setCurrentIndex(self.samplers.index(self.settings.value("sampler")))
         self.sampler_combo.setMinimumHeight(40)
         self.sampler_combo.setMinimumWidth(160)
+        self.sampler_combo.setToolTip("Select the sampler used for the image generation.")
         
         self.steps_spinner = QSpinBox(self)
         self.steps_spinner.setRange(10, 50)
@@ -181,6 +179,7 @@ class MyWindow(QMainWindow):
                 self.upscale_checkbox.setChecked(False)
         self.upscale_checkbox.stateChanged.connect(self.upscale_checked)
         self.upscale_checkbox.setMinimumHeight(40)
+        self.upscale_checkbox.setToolTip("Check to enable upscaling functionality and show upscale options.")
         
         self.upscale_model = QComboBox(self)
         self.upscale_model.addItems(self.models)
@@ -193,6 +192,7 @@ class MyWindow(QMainWindow):
         self.upscale_model.setMinimumHeight(40)
         self.upscale_model.setMinimumWidth(160)
         self.upscale_model.setVisible(False)
+        self.upscale_model.setToolTip("Select which model used for the upscaling.")
         
         self.upscale_radio_group = QtWidgets.QButtonGroup(self)
         self.upscale_radio_720p = QRadioButton("720p")
@@ -265,7 +265,12 @@ class MyWindow(QMainWindow):
         self.config_box.setGeometry(20, 70, 360, 375)
         self.config_box.setLayout(self.config_layout)
         
-        #prompts group
+        ##
+        # - Prompt Input Box and Text Inputs - 
+        # Contains the prompt box framerwork, the
+        # positive and negative text input boxes,
+        # and the corresponding text labels.
+        ##
         self.prompt_box = QGroupBox("Prompt Configuration", self)
         self.prompt_box.setGeometry(20, 465, 360, 180)
         self.prompt_layout = QFormLayout(self)
@@ -287,14 +292,20 @@ class MyWindow(QMainWindow):
         self.prompt_layout.addRow(self.negative_prompt_text, self.negative_prompt)
         self.prompt_box.setLayout(self.prompt_layout)
 
-        #start cosmetic line
+        ##
+        # - Start Button Components -
+        # Contains the cosmetic line passing through
+        # the upload button, the start button itself,
+        # the cancel button that replaces the start
+        # button during generation, and their corresponding
+        # text labels.
+        ##
         self.start_line = QFrame(self)
         self.start_line.setGeometry(20, 670, 360, 10)
         self.start_line.setStyleSheet("color: rgba(56, 189, 248, 1);")
         self.start_line.setFrameShape(QFrame.HLine)
         self.start_line.setLineWidth(3)
 
-        #start button
         self.startButton = QPushButton(self)
         self.startButton.setText("Generate Video")
         self.startButton.move((int)(200 - (self.startButton.frameGeometry().width())/2), 660)
@@ -310,7 +321,16 @@ class MyWindow(QMainWindow):
         self.cancelButton.setVisible(False)
         self.cancelButton.setToolTip("Cancel the conversion process")
 
-        #split progress widgets
+        ##
+        # - Generation Progress Widgets and Assets - 
+        # Contains the widgets responsible for displaying
+        # the progress of image generation, split between
+        # the video splitting (split_), the image generation (gen_),
+        # and the video re-stitching (stitch_). Each group contains 
+        # a loading gif (_prog_gif), a completed png (_prog_done),
+        # a text label (_prog_text), a label that contains 
+        # the gif (_prog_loading_)
+        # 
         self.split_prog_gif = QMovie("assets\\loading.gif")
         self.split_prog_loading = QLabel(self)
         self.split_prog_loading.setScaledContents(True)
@@ -328,8 +348,7 @@ class MyWindow(QMainWindow):
         self.split_prog_text.setGeometry(160, 710, 200, 20)
         self.split_prog_text.setText("Splitting frames...")
         self.split_prog_text.setVisible(False)
-        
-        #imggen progress widgets
+
         self.gen_prog_gif = QMovie("assets\\loading.gif")
         self.gen_prog_loading = QLabel(self)
         self.gen_prog_loading.setScaledContents(True)
@@ -347,8 +366,7 @@ class MyWindow(QMainWindow):
         self.gen_prog_text.setGeometry(160, 765, 200, 20)
         self.gen_prog_text.setText("Generating frames...")
         self.gen_prog_text.setVisible(False)
-        
-        #stitch progress widgets
+
         self.stitch_prog_gif = QMovie("assets\\loading.gif")
         self.stitch_prog_loading = QLabel(self)
         self.stitch_prog_loading.setScaledContents(True)
@@ -367,6 +385,9 @@ class MyWindow(QMainWindow):
         self.stitch_prog_text.setText("Stiching the video back together...")
         self.stitch_prog_text.setVisible(False)
         
+        ## 
+        # - Final checks for warnings and prior configurations -
+        ##
         if len(os.listdir("../generatedFrames")) > 1:
             self.recoverDetected()
         
@@ -375,6 +396,14 @@ class MyWindow(QMainWindow):
         
         self.auto1111check()
 
+    ##
+    # - Check for Stable Diffusion Automatic 1111 -
+    # Checks if the user has properly installed and run
+    # the Stable Diffusion Automatic 1111 api required
+    # to generate. If the user has not, then a warning
+    # prompt is displayed prior to the GUI being shown
+    # for the first time.
+    ##
     def auto1111check(self):
         try:
             html = urlopen("http://127.0.0.1:7860/sdapi/v1/img2img")
@@ -392,6 +421,12 @@ class MyWindow(QMainWindow):
             a1111dlg.setText("Automatic 1111 is either not running or not running in api mode.\nIf not running go to your automatic1111 root directory and run run.bat\nIf it is running then please add --api to COMMANDLINE-ARGS in automatic1111/webui/webui-user.bat and run it again")
             a1111dlg.exec_()
     
+    ##
+    # - Helper Function for Upscale Widgets -
+    # Adjusts the GUI to account for the upscaling
+    # configuration options that are hidden or
+    # shown based on the upscale checkbox state.
+    ##
     def upscale_checked(self):
         if self.upscale_checkbox.isChecked() == True:
             self.setFixedSize(400, 950)
@@ -441,6 +476,13 @@ class MyWindow(QMainWindow):
             self.upscale_warning.setVisible(False)
 
 
+    ##
+    # - Functionality for Upload Button -
+    # Facilitates the upload button's signal
+    # and allows the user to select a file from
+    # their directory. Will flag if the file is 
+    # not the correct file type (.mp4, .avi, or .mov).
+    ##
     def uploadClicked(self): 
         options = QFileDialog.Options()
         file_types = "Video Files (*.mp4 *.avi *.mov);;All Files (*)"
@@ -461,6 +503,16 @@ class MyWindow(QMainWindow):
 
         self.startButton.setEnabled(True)
       
+    ##
+    # - Functionality for Start Button -
+    # Handles the start button's signal and
+    # begins the process. Will flag if there are 
+    # unfilled required configuration options (file,
+    # model, sampler, positive prompts). This function
+    # also handles saving the current settings to 
+    # the persistence .ini file to be reloaded
+    # on the next open.
+    ##
     def startClicked(self):
         if self.positive_prompt.toPlainText() == "":
             errdlg1 = QMessageBox()
@@ -501,10 +553,19 @@ class MyWindow(QMainWindow):
             self.settings.setValue("upscale_resolution", self.upscale_radio_group.checkedId())
             self.settings.sync()
             
-      
+    ##
+    # - Helper Function for Cancel - 
+    # Handles the signal for the cancel button.
+    # Restarts the program when clicked.
+    ##   
     def cancelClicked(self):
         os.execl(sys.executable, *sys.orig_argv) 
-                
+    
+    ##
+    # - Functionality for Frame Splitting -
+    # Calls the frame splitting script and
+    # adjusts the related progress labels/assets.
+    ##             
     def splitFrames(self):
         self.split_prog_loading.setVisible(True)
         self.split_prog_gif.start()
@@ -514,13 +575,23 @@ class MyWindow(QMainWindow):
         self.generateFrames()
         self.stitchVideo()
     
+    ##
+    # - Splitting Finished Emit - 
+    # Signifies that the video has finished splitting
+    # and updates the related progress labels/assets.
+    ##
     def splitFinished(self):
         self.split_prog_gif.stop()
         self.split_prog_loading.setVisible(False)
         self.split_prog_done.setVisible(True)
         self.split_prog_text.setText("Finished Splitting Frames!")
         self.split_prog_text.setStyleSheet("color: green")
-    
+    ##
+    # - Functionality for Frame Generation - 
+    # Calls the image generation script with
+    # the user's defined configuration and
+    # updates the related progress labels/assets.
+    ##
     def generateFrames(self):
         self.gen_prog_loading.setVisible(True)
         self.gen_prog_gif.start()
@@ -548,14 +619,24 @@ class MyWindow(QMainWindow):
         else:
             img_gen.generate_images(prompt_p, prompt_n, modelName, sampler, steps, cfg, denoise, descale)
         self.genFinished()
-    
+    ##
+    # - Generation Finished Emit -
+    # Signals that the image generation 
+    # has completed successfully and adjusts
+    # the related labels/assets.
+    ##
     def genFinished(self):
         self.gen_prog_gif.stop()
         self.gen_prog_loading.setVisible(False)
         self.gen_prog_done.setVisible(True)
         self.gen_prog_text.setText("Finished Generating Frames!")
         self.gen_prog_text.setStyleSheet("color: green")
-    
+    ##
+    # - Functionality for Video Stitching - 
+    # Calls the video stitching script with
+    # the user's defined configuration and
+    # updates the related progress labels/assets.
+    ##
     def stitchVideo(self):
         self.stitch_prog_loading.setVisible(True)
         self.stitch_prog_gif.start()
@@ -563,7 +644,16 @@ class MyWindow(QMainWindow):
         animated_video_name = self.__file.split("/")[-1].split(".")[0]
         stitcher.stitch_frames(animated_video_name, self.__file)
         self.stitchFinished()
-    
+    ##
+    # - Stitching Finished Emit -
+    # Signals that the video stitching 
+    # has completed successfully and adjusts
+    # the related labels/assets. This function
+    # will also call the cleanup script to
+    # clean the directories of any files used
+    # within the image generation process that
+    # are no longer needed.
+    ##
     def stitchFinished(self):
         self.stitch_prog_gif.stop()
         self.stitch_prog_loading.setVisible(False)
@@ -571,7 +661,19 @@ class MyWindow(QMainWindow):
         self.stitch_prog_text.setText("Finished Stitching Video!")
         self.stitch_prog_text.setStyleSheet("color: green")
         cleanup()
-            
+    
+    ##
+    # - Recover Detection Function -
+    # Hides the default GUI widgets and displays
+    # a set of buttons and labels indicating
+    # that there were files found leftover in
+    # the directories (signifying the previous
+    # runtime was interrupted or failed) and allows
+    # the user to overwrite or recover. This function
+    # will also display a thumbnail of the first frame
+    # in the found files to serve as a reminder of 
+    # the previous generation attempt.
+    ##        
     def recoverDetected(self):
         self.uploadButton.setVisible(False)
         self.upload_line.setVisible(False)
@@ -605,10 +707,16 @@ class MyWindow(QMainWindow):
         self.recover_thumbnail.setAlignment(Qt.AlignCenter)
         self.recover_thumbnail.setPixmap(QPixmap("../generatedFrames/frame0.png").scaled(208,117))
         
-    
+    ##
+    # - Helper Function for Recovery - 
+    # Handles the button signals for 
+    # when a recovery is selected instead
+    # of an overwrite and returns the GUI
+    # to its default state.
+    ##
     def recoverProject(self):
         recovered_frames = os.listdir("../generatedFrames")
-        self.__recover_frame = len(recovered_frames) # subtract README
+        self.__recover_frame = len(recovered_frames)
         print(self.__recover_frame)
         
         self.recover_label_1.setVisible(False)
@@ -624,6 +732,12 @@ class MyWindow(QMainWindow):
         self.startButton.setVisible(True)
         self.start_line.setVisible(True)
     
+    ## 
+    # - Overwrite Confirmation - 
+    # Handles the secondary overwrite screen
+    # that prompts the user to confirm before
+    # deleting the found files.
+    ##
     def confirmOverwrite(self):
         self.recover_label_1.setText("This will permanently delete the previous project.")
         self.recover_label_2.setText("Would you like to continue?")
@@ -634,12 +748,22 @@ class MyWindow(QMainWindow):
         
         self.recover_no.setText("No")
         self.recover_no.clicked.connect(self.initUI)
-        
+    
+    ##
+    # - Helper Function for Overwriting - 
+    # Handles the signal from the overwrite confirm
+    # button and cleans the directory before
+    # restarting the program.
+    ##    
     def overwriteProject(self):
         cleanup()
         os.execl(sys.executable, *sys.orig_argv)
             
-    
+##
+# - Worker Object -
+# Worker class to handle multithreading
+# functionality.
+##    
 class Worker(QObject):
     def __init__(self, function, *args, **kwargs):
         super().__init__()
@@ -649,7 +773,12 @@ class Worker(QObject):
     
     def run(self):
         self.function(*self.args, **self.kwargs)
-        
+
+##
+# - Background Window Function - 
+# Initiates the program's backbone.
+# Serves as a "main()" function.
+##        
 def window():
         app = QApplication(sys.argv)
         app.setStyleSheet(Path('../config/styles.qss').read_text())

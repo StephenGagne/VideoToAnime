@@ -1,3 +1,11 @@
+/*
+Default Style Values:
+    Primary Colour: rgba(56, 189, 248, 0.9);
+        Used for text and focused buttons.
+    Secondary Colour: rgba(56, 189, 248, 1);
+        Used for the background and unfocused buttons.
+*/
+
 /* General styling */
 * {
     font-size: 14px;
@@ -47,15 +55,4 @@ QSpinBox,
 QDoubleSpinBox {
     border: 1px solid rgba(255, 255, 255, 1);
     color: rgba(56, 189, 248, 1);
-}
-
-/* Progress bar styles */
-QProgressBar {
-    background-color: white;
-    border: 1px solid grey;
-    border-radius: 5px;
-}
-
-QProgressBar::chunk {
-    background-color: green;
 }
