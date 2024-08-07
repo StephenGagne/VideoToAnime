@@ -1,5 +1,7 @@
 # AnimateXpress
-Desktop tool for converting live-action video to animated
+- Desktop tool for converting live-action video to animated
+- Original Authors: Aram Alexanian, Zachary Nielsen, Chang Liu, Michael Putnik, Xaohang Ji, Vy Chau
+
 
 ## Installation Guide
 ### Installing Stable Diffusion Automatic1111

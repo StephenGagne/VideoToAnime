@@ -1,11 +1,19 @@
-
 import os
 from moviepy.editor import VideoFileClip, AudioFileClip
 
+##
+# Checks if the file exists
+# file_path = path to the file being checked
+##
 def file_exists(file_path):
     """Check if a file exists."""
     return os.path.isfile(file_path)
 
+##
+# Checks if the video and audio are the same length
+# video_path = path to the video
+# audio_path = path to the audio
+##
 def check_lengths(video_path, audio_path):
     """Check if the lengths of the video and audio are the same."""
     video_clip = VideoFileClip(video_path)
@@ -16,6 +24,12 @@ def check_lengths(video_path, audio_path):
     
     return video_duration == audio_duration
 
+##
+# Adds the audio to the video
+# video_path = path to the video
+# audio_path = path to the audio
+# output_path = path to save the new video
+##
 def merge_audio_to_video(video_path, audio_path, output_path):
     """Merge an audio file to a video file if they exist and have the same length."""
     if not file_exists(video_path):
