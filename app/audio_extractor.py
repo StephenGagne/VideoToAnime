@@ -2,6 +2,10 @@ from moviepy.editor import VideoFileClip
 import sys
 import os
 
+##
+# Extracts the audio and saves is into ../audio/
+# video_name = the name of the video
+##
 def extract_audio(video_name):
     # Ensure the input file exists
     input_video_path = video_name
@@ -28,6 +32,10 @@ def extract_audio(video_name):
     audio.write_audiofile(output_audio_path)
     print(f"Audio extracted and saved to {output_audio_path}")
 
+
+##
+# Used for when running the file on it's own for testing
+##
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python audio_extractor.py <path_to_video>")

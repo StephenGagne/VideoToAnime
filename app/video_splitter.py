@@ -6,6 +6,10 @@
 import cv2
 import os
 
+##
+# Splits the video into frames
+# video_name = name of the video
+##
 def split(video_name):
     # Playing video from file:
     # you can modify the "PutVideoName.mp4" to the video u wanna split
@@ -48,5 +52,8 @@ def split(video_name):
     cap.release()
     return
 
+##
+# Used for when running the file on it's own for testing
+##
 if __name__ == '__main__':
     split("C:\\VideoToAnime\\input\\example.mp4")

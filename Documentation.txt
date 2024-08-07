@@ -1,0 +1,113 @@
+File: ai_image_generation.py
+Holds the functions used to generate images
+Functions
+encode_file_to_base64(path)
+	Encodes a file, in our case an image to a base64
+	path = the image path
+	
+decode_and_save_base64(base64_str, save_path)
+	Decodes a base64 encoded string into an image and saves it
+	base64_str = string to be decoded
+	save_path = path that the string will be saved
+	
+call_api(api_endpoint, **payload)
+	Makes an api call with a payload
+	api_endpoint = the api being called
+	**payload = json payload being sent
+	
+call_img2img_api(savePath, **payload)
+	calls the img2img api for Stable Diffusion Automatic 1111
+	savePath = the path that the response image will be saved
+	**payload = json payload being sent
+	
+create_payload(positive, negative, steps, cfg, denoise, imagePath, descale, model_name, sampler)
+	creates a json payload to generate an image with img2img
+	positive = the positive prompt
+	negative = the negative prompt
+	steps = the number of steps for the sampler
+	cfg = the cfg value
+	denoise = the denoise value
+	imagePath = the path to the image
+	descale = the descale value
+	model_name = the name of the model
+	sampler = the name of the sampler
+	
+create_upscale_payload(positive, negative, imagePath, model_name, sampler, upscale_value)
+	creates a json payload for upscaling an image
+	positive = the positive prompt
+	negative = the negative prompt
+	imagePath = the path to the image
+	model_name = the name of the model
+	sampler = the name of the sampler
+	upscale_value = the amount the image will be upscaled
+	
+generate_images(positive, negative, model_name, sampler, steps, cfg, denoise, descale, upscale=False, upscale_name="", upscale_value=1.5)
+	starts the generation process for the images found in originalFrames/
+	positive = the positive prompt
+	negative = the negative prompt
+	model_name = the name of the model
+	sampler = the name of the sampler
+	steps = the number of steps for the sampler
+	cfg = the cfg value
+	denoise = the denoise value
+	descale = the descale value
+	upscale = whether upscaling is happening default to False
+	upscale_name = the model used to upscale
+	upscale_value = the amount that the video will be upscaled to
+	
+File: audio_extractor.py
+Holds the function to extract audio
+Function:
+extract_audio(video_name)
+	Extracts the audio and saves it in audio/
+	video_name = the name of the video
+	
+File: audio_merger.py
+Holds functions for merging audio
+Functions:
+file_exists(file_path)
+	Checks if a file exists
+	file_path = path to the file
+	
+check_lengths(video_path, audio_path)
+	Checks if the video and audio lengths are the same
+	video_path = path to the video
+	audio_path = path to the audio
+	
+merge_audio_to_video(video_path, audio_path, output_path)
+	Merges the audio and video together
+	video_path = path to the video
+	audio_path = path to the audio
+	output_path = path that the result video will be saved
+	
+File: cleanup.py
+Holds function for emptying used directories
+Function:
+cleanup()
+	empties generatedFrames/ and originalFrames/ directories
+	
+File: directory.py
+Holds the variable for the Automatic 1111 model directory
+
+File: frame_stitcher.py
+Holds functions for stitching the frames back into a video
+Functions:
+get_frame_rate(videoPath)
+	gets the frame rate of a selected video
+	videoPath = path to the video
+	
+stitch_frames(videoName,videoPath)
+	Stitches the frames into a video
+	videoName = name of the original video
+	videoPath = path to the original video
+	
+File: ui.py
+Holds the logic for creating the application front end
+Functions:
+
+File: video_splitter.py
+Holds the functions used to split a video into frames
+Functions:
+split(video_name)
+	splits a desired video into frames
+	video_name = the path of the video being split

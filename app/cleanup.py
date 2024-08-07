@@ -1,5 +1,8 @@
 import os
 
+##
+# Used to empty the directories for genertated frames and original frames
+##
 def cleanup():
     Generated = "../generatedFrames/"
     Split = "../originalFrames/"

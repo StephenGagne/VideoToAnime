@@ -3,11 +3,20 @@ import os
 from audio_merger import merge_audio_to_video
 from audio_extractor import extract_audio
 
+##
+# Used to get the frame rate from a video
+# videoPath = path to the video
+##
 def get_frame_rate(videoPath):
     # Get the frame rate
     frame_rate = cv2.VideoCapture(videoPath).get(cv2.CAP_PROP_FPS)
     return frame_rate
 
+##
+# Stitches the frames back into a video
+# videoName = name of the video
+# videoPath = path to the video
+##
 def stitch_frames(videoName,videoPath):
     # Path to the directory containing frames
     frame_directory = "..\\generatedFrames\\"
@@ -45,6 +54,9 @@ def stitch_frames(videoName,videoPath):
     os.remove(temp_video_file)
     print("Video has been created successfully!")
 
+##
+# Used for when running the file on it's own for testing
+##
 if __name__ == "__main__":
     video_name = "AML_AI-Clip"
     video_path = "C:\\VideoToAnime\\input\\AML_AI-Clip.mp4"
